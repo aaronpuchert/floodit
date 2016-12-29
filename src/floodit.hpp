@@ -1,6 +1,6 @@
 #include <vector>
 
-typedef short int color_t;
+typedef char color_t;
 
 /**
  * Colored undirected graph.

@@ -59,8 +59,12 @@ ColorArray readData(std::istream& input)
 	input >> rows >> columns;
 
 	std::vector<color_t> array(rows * columns, 0);
+	int entry;
 	for (unsigned i = 0; i < rows*columns; ++i)
-		input >> array[i];
+	{
+		input >> entry;
+		array[i] = static_cast<color_t>(entry);
+	}
 
 	return ColorArray(rows, columns, std::move(array));
 }
@@ -89,6 +93,6 @@ int main(int argc, char **argv)
 
 	std::cout << "A shortest sequence of moves is given by:\n\n    ";
 	for (color_t color : result)
-		std::cout << color << " ";
+		std::cout << static_cast<int>(color) << " ";
 	std::cout << '\n';
 }
