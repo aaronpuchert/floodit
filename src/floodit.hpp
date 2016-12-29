@@ -33,7 +33,14 @@ class State
 
 public:
 	explicit State(const Graph &graph);
-	State(const State &old, color_t next);
+
+	/**
+	 * Do a move.
+	 *
+	 * @param next Color for move.
+	 * @return True, if the move makes sense.
+	 */
+	bool move(color_t next);
 	int computeValuation() const;
 	const std::vector<color_t> getMoves() const { return moves; }
 	color_t getLastColor() const { return moves.back(); }

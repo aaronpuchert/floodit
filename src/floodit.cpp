@@ -81,17 +81,54 @@ State::State(const Graph &graph)
 	filled[0] = true;
 }
 
-State::State(const State &old, color_t next)
-	: graph(old.graph), filled(old.filled), moves(old.moves)
+bool State::move(color_t next)
 {
 	assert(next != moves.back());
+
+	color_t last = moves.back();
 	moves.push_back(next);
 
-	for (unsigned node = 0; node < filled.size(); ++node)
-		if (old.filled[node])
-			for (unsigned neighbor : graph.getNode(node).neighbors)
-				if (graph.getNode(neighbor).color == next)
-					filled[neighbor] = true;
+	if (next > last)
+	{
+		// Does the move change anything?
+		bool expansion = false;
+		for (unsigned node = 0; node < filled.size(); ++node)
+			if (graph.getNode(node).color == next && !filled[node])
+				for(unsigned neighbor : graph.getNode(node).neighbors)
+					if (filled[neighbor])
+					{
+						filled[node] = true;
+						expansion = true;
+					}
+
+		if (!expansion)
+			return false;
+	}
+	else
+	{
+		// Does the move change anything that couldn't have happened before?
+		bool additionalExpansion = false;
+		for (unsigned node = 0; node < filled.size(); ++node)
+			if (graph.getNode(node).color == next && !filled[node])
+			{
+				// Was any of the neighbors filled before the last move?
+				bool prev = false;
+				for(unsigned neighbor : graph.getNode(node).neighbors)
+					if (filled[neighbor])
+					{
+						filled[node] = true;
+						if (graph.getNode(neighbor).color != last)
+							prev = true;
+					}
+				if (filled[node] && !prev)
+					additionalExpansion = true;
+			}
+
+		if (!additionalExpansion)
+			return false;
+	}
+
+	return true;
 }
 
 int State::computeValuation() const
@@ -166,7 +203,7 @@ std::vector<color_t> computeBestSequence(const Graph &graph, color_t numColors)
 	queue.push(std::move(initial), initial.computeValuation());
 
 	while (!queue.empty()) {
-		State state = queue.top();
+		const State &state = queue.top();
 		if (state.done())
 			return state.getMoves();
 
@@ -175,8 +212,9 @@ std::vector<color_t> computeBestSequence(const Graph &graph, color_t numColors)
 			if (next == state.getLastColor())
 				continue;
 
-			State nextState(state, next);
-			queue.push(std::move(nextState), nextState.computeValuation());
+			State nextState = state;
+			if (nextState.move(next))
+				queue.push(std::move(nextState), nextState.computeValuation());
 		}
 
 		queue.pop();
