@@ -1,4 +1,4 @@
-#include <unordered_set>
+#include <queue>
 #include <stdexcept>
 
 /**
@@ -23,16 +23,10 @@ public:
 	 */
 	void push(T &&value, int priority)
 	{
-		if (priority == min_priority) {
-			auto old = upper.find(value);
-			if (old != upper.end())
-				upper.erase(old);
-			lower.insert(std::move(value));
-		}
-		else if (priority == min_priority + 1) {
-			if (lower.find(value) == lower.end())
-				upper.insert(std::move(value));
-		}
+		if (priority == min_priority)
+			lower.push(std::move(value));
+		else if (priority == min_priority + 1)
+			upper.push(std::move(value));
 		else
 			throw std::out_of_range("Priority out of range");
 	}
@@ -44,16 +38,16 @@ public:
 	}
 
 	/// Get the next element. The iterator can be used to @ref pop() it later.
-	std::pair<typename std::unordered_set<T>::const_iterator, int> top() const
+	const T& top() const
 	{
 		assert(!lower.empty());
-		return std::make_pair(lower.cbegin(), min_priority);
+		return lower.front();
 	}
 
 	/// Remove an element obtained by @ref top().
-	void pop(typename std::unordered_set<T>::const_iterator it)
+	void pop()
 	{
-		lower.erase(it);
+		lower.pop();
 
 		if (lower.empty()) {
 			std::swap(lower, upper);
@@ -62,6 +56,6 @@ public:
 	}
 
 private:
-	std::unordered_set<T> lower, upper;
+	std::queue<T> lower, upper;
 	int min_priority;
 };

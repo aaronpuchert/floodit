@@ -166,8 +166,7 @@ std::vector<color_t> computeBestSequence(const Graph &graph, color_t numColors)
 	queue.push(std::move(initial), initial.computeValuation());
 
 	while (!queue.empty()) {
-		auto top = queue.top();
-		const State &state = *top.first;
+		State state = queue.top();
 		if (state.done())
 			return state.getMoves();
 
@@ -180,7 +179,7 @@ std::vector<color_t> computeBestSequence(const Graph &graph, color_t numColors)
 			queue.push(std::move(nextState), nextState.computeValuation());
 		}
 
-		queue.pop(top.first);
+		queue.pop();
 	}
 
 	// If we didn't find any way to flood fill the entire graph, then it's
