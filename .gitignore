@@ -1,0 +1,5 @@
+debug/
+release/
+.kdev4/
+*.kdev4
+*.kilepr
