@@ -96,32 +96,42 @@ State::State(const State &old, color_t next)
 
 int State::computeValuation() const
 {
-	// Start with the initial node.
-	std::vector<bool> visited(filled.size(), false);
-	special_priority_queue<unsigned> queue(0);
-	queue.push(0, 0);
+	// Bitfield to mark visited nodes (to avoid visiting a node more than once).
+	std::vector<bool> visited = filled;
 
-	int max_depth = 0;
-	while (!queue.empty()) {
-		auto node = queue.top();
-		visited[*node.first] = true;
-		color_t color = graph.getNode(*node.first).color;
-		max_depth = std::max(max_depth, node.second);
+	// Current (distance = r) and next layer (distance = r+1) of nodes.
+	std::vector<unsigned> current, next;
+	current.reserve(filled.size());
+	next.reserve(filled.size());
 
-		// Find all kids and add them.
-		for (unsigned neighbor : graph.getNode(*node.first).neighbors) {
-			assert(color != graph.getNode(neighbor).color);
-			if (!visited[neighbor]) {
-				assert(filled[*node.first] || !filled[neighbor]);
-				queue.push(std::move(neighbor),
-					filled[neighbor] ? 0 : node.second + 1);
+	// For distance = 0, we have all the nodes that are already filled.
+	for (unsigned index = 0; index < filled.size(); ++index)
+		if (filled[index])
+			current.push_back(index);
+
+	unsigned maxDist = 0;
+	for (; !current.empty(); ++maxDist)
+	{
+		// Expand current layer of nodes.
+		for (unsigned node : current)
+		{
+			for (unsigned neighbor : graph.getNode(node).neighbors)
+			{
+				// If we didn't visit the node yet, it has distance = r+1.
+				if (!visited[neighbor])
+				{
+					next.push_back(neighbor);
+					visited[neighbor] = true;
+				}
 			}
 		}
 
-		queue.pop(node.first);
+		// Move the next layer into the current.
+		std::swap(current, next);
+		next.clear();
 	}
 
-	return moves.size() + max_depth;
+	return moves.size() + maxDist;
 }
 
 bool State::done() const
