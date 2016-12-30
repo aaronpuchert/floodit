@@ -176,26 +176,6 @@ bool State::done() const
 	return std::all_of(filled.begin(), filled.end(), [](bool x) { return x; });
 }
 
-bool operator==(const State &a, const State &b)
-{
-	assert(&a.graph == &b.graph);
-	return a.moves == b.moves;
-}
-
-namespace std {
-	template<> struct hash<State>
-	{
-	public:
-		size_t operator()(const State &state) const noexcept
-		{
-			size_t seed = state.getMoves().size();
-			for (color_t x : state.getMoves())
-				seed ^= x + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-			return seed;
-		}
-	};
-}
-
 std::vector<color_t> computeBestSequence(const Graph &graph, color_t numColors)
 {
 	State initial(graph);

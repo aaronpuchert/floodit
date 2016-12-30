@@ -29,8 +29,6 @@ private:
  */
 class State
 {
-	friend bool operator==(const State &a, const State &b);
-
 public:
 	explicit State(const Graph &graph);
 
