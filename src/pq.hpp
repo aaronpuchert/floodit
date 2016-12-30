@@ -37,7 +37,7 @@ public:
 		return lower.empty();
 	}
 
-	/// Get the next element. The iterator can be used to @ref pop() it later.
+	/// Get the next element.
 	const T& top() const
 	{
 		assert(!lower.empty());

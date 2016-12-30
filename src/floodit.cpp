@@ -15,8 +15,6 @@
 #include "pq.hpp"
 #include "unionfind.hpp"
 
-typedef char color_t;
-
 Graph::Graph(std::vector<Node> &&nodelist) : nodes(std::move(nodelist))
 {
 	// Sort the adjacency lists.
