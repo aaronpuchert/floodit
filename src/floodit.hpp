@@ -42,8 +42,15 @@ public:
 	 */
 	const Node& getNode(unsigned i) const { return nodes[i]; }
 
+	/**
+	 * Get a vector that contains the number of nodes for each color.
+	 * @return Color statistic.
+	 */
+	const std::vector<unsigned>& getColorCounts() const { return colorCounts; }
+
 private:
 	std::vector<Node> nodes;
+	std::vector<unsigned> colorCounts;
 };
 
 /**
@@ -103,4 +110,4 @@ private:
 /**
  * A^* algorithm to compute the best sequence.
  */
-std::vector<color_t> computeBestSequence(const Graph &graph, color_t numColors);
+std::vector<color_t> computeBestSequence(const Graph &graph);

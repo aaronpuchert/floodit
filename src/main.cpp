@@ -89,7 +89,7 @@ int main(int argc, char **argv)
 	Graph graph = array.createGraph();
 	graph.reduce();
 	std::vector<color_t> result =
-		computeBestSequence(graph, array.getNumColors());
+		computeBestSequence(graph);
 
 	std::cout << "A shortest sequence of moves is given by:\n\n    ";
 	for (color_t color : result)

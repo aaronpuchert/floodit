@@ -71,6 +71,14 @@ void Graph::reduce()
 		end = std::unique(neighbors.begin(), end);
 		neighbors.erase(end, neighbors.end());
 	}
+
+	// Compute the number of colors.
+	auto max = std::max_element(nodes.begin(), nodes.end(),
+		[](const Node &a, const Node &b) { return a.color < b.color; });
+	colorCounts.resize(max->color + 1);
+	// Count the number of nodes for each color.
+	for (unsigned i = 0; i < nodes.size(); ++i)
+		++colorCounts[nodes[i].color];
 }
 
 State::State(const Graph &graph)
@@ -147,12 +155,28 @@ int State::computeValuation() const
 		if (filled[index])
 			current.push_back(index);
 
-	unsigned maxDist = 0;
-	for (; !current.empty(); ++maxDist)
+	// We observe the following: for every distance d of which we have nodes,
+	// the sum of the distance plus the number of colors of nodes of distance
+	// larger than d is a lower bound for the number of moves needed. That is
+	// because the first d moves can at most remove nodes of distance less than
+	// or equal to d, and the remaining colors have to be cleared by separate
+	// moves. The maximum of this number over all d for which we have nodes is
+	// obviously still a lower bound, hence admissible. It is also consistent.
+
+	// The remaining number of nodes for each color.
+	std::vector<unsigned> colorCounts = graph->getColorCounts();
+	// The remaining number of colors.
+	unsigned numColors =
+		std::count_if(colorCounts.begin(), colorCounts.end(),
+			[](unsigned i) { return i > 0; });
+	unsigned max = 0;
+	for (unsigned distance = 0; !current.empty(); ++distance)
 	{
 		// Expand current layer of nodes.
 		for (unsigned node : current)
 		{
+			if (--colorCounts[graph->getNode(node).color] == 0)
+				--numColors;
 			for (unsigned neighbor : graph->getNode(node).neighbors)
 			{
 				// If we didn't visit the node yet, it has distance = r+1.
@@ -167,9 +191,10 @@ int State::computeValuation() const
 		// Move the next layer into the current.
 		std::swap(current, next);
 		next.clear();
+		max = std::max(max, distance + numColors);
 	}
 
-	return moves.size() + maxDist;
+	return moves.size() + max;
 }
 
 bool State::done() const
@@ -187,7 +212,7 @@ struct StateCompare
 	}
 };
 
-std::vector<color_t> computeBestSequence(const Graph &graph, color_t numColors)
+std::vector<color_t> computeBestSequence(const Graph &graph)
 {
 	std::priority_queue<State, std::vector<State>, StateCompare> queue;
 	queue.push(State(graph));
@@ -199,6 +224,7 @@ std::vector<color_t> computeBestSequence(const Graph &graph, color_t numColors)
 			return state.getMoves();
 
 		// Try all colors but the last one used.
+		color_t numColors = graph.getColorCounts().size();
 		for (color_t next = 0; next < numColors; ++next) {
 			if (next == state.getLastColor())
 				continue;
