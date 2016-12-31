@@ -12,7 +12,8 @@
 
 #include <algorithm>
 #include <cassert>
-#include "pq.hpp"
+#include <queue>
+#include <stdexcept>
 #include "unionfind.hpp"
 
 Graph::Graph(std::vector<Node> &&nodelist) : nodes(std::move(nodelist))
@@ -77,6 +78,7 @@ State::State(const Graph &graph)
 	  moves(1, graph.getNode(0).color)
 {
 	filled[0] = true;
+	valuation = computeValuation();
 }
 
 bool State::move(color_t next)
@@ -126,6 +128,7 @@ bool State::move(color_t next)
 			return false;
 	}
 
+	valuation = computeValuation();
 	return true;
 }
 
@@ -174,14 +177,24 @@ bool State::done() const
 	return std::all_of(filled.begin(), filled.end(), [](bool x) { return x; });
 }
 
+struct StateCompare
+{
+	bool operator()(const State &a, const State &b) const
+	{
+		if (a.getValuation() != b.getValuation())
+			return a.getValuation() > b.getValuation();
+		return a.getMoves().size() < b.getMoves().size();
+	}
+};
+
 std::vector<color_t> computeBestSequence(const Graph &graph, color_t numColors)
 {
-	State initial(graph);
-	special_priority_queue<State> queue(initial.computeValuation());
-	queue.push(std::move(initial), initial.computeValuation());
+	std::priority_queue<State, std::vector<State>, StateCompare> queue;
+	queue.push(State(graph));
 
 	while (!queue.empty()) {
-		const State &state = queue.top();
+		State state = queue.top();
+		queue.pop();
 		if (state.done())
 			return state.getMoves();
 
@@ -192,10 +205,8 @@ std::vector<color_t> computeBestSequence(const Graph &graph, color_t numColors)
 
 			State nextState = state;
 			if (nextState.move(next))
-				queue.push(std::move(nextState), nextState.computeValuation());
+				queue.push(std::move(nextState));
 		}
-
-		queue.pop();
 	}
 
 	// If we didn't find any way to flood fill the entire graph, then it's

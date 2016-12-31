@@ -66,10 +66,10 @@ public:
 	bool move(color_t next);
 
 	/**
-	 * Compute valuation of the state.
+	 * Get valuation of the state.
 	 * @return Lower bound on the total number of moves required.
 	 */
-	int computeValuation() const;
+	int getValuation() const { return valuation; }
 
 	/**
 	 * Get the moves that lead to the state.
@@ -90,10 +90,14 @@ public:
 	bool done() const;
 
 private:
+	int computeValuation() const;
+
+private:
 	const Graph *graph;
 
 	std::vector<bool> filled;
 	std::vector<color_t> moves;
+	int valuation;
 };
 
 /**

@@ -15,7 +15,7 @@ GENERATOR = $(BUILDDIR)/floodit-generator
 
 CPPS = src/floodit.cpp
 MAIN = src/main.cpp
-HEADERS = floodit.hpp pq.hpp unionfind.hpp
+HEADERS = floodit.hpp unionfind.hpp
 HPPS = $(patsubst %,src/%,$(HEADERS))
 
 MAIN_OBJS = $(patsubst src/%.cpp,$(BUILDDIR)/%.o,$(CPPS) $(MAIN))
