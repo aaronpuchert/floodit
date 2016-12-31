@@ -75,7 +75,7 @@ public:
 	 * Get the moves that lead to the state.
 	 * @return Vector of moves, including the initial color of node 0.
 	 */
-	const std::vector<color_t> getMoves() const { return moves; }
+	const std::vector<color_t>& getMoves() const { return moves; }
 
 	/**
 	 * Get the color of the last move.
