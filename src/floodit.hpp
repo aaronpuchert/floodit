@@ -90,7 +90,7 @@ public:
 	bool done() const;
 
 private:
-	const Graph &graph;
+	const Graph *graph;
 
 	std::vector<bool> filled;
 	std::vector<color_t> moves;

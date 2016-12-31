@@ -73,7 +73,7 @@ void Graph::reduce()
 }
 
 State::State(const Graph &graph)
-	: graph(graph), filled(graph.getNumNodes(), false),
+	: graph(&graph), filled(graph.getNumNodes(), false),
 	  moves(1, graph.getNode(0).color)
 {
 	filled[0] = true;
@@ -91,8 +91,8 @@ bool State::move(color_t next)
 		// Does the move change anything?
 		bool expansion = false;
 		for (unsigned node = 0; node < filled.size(); ++node)
-			if (graph.getNode(node).color == next && !filled[node])
-				for(unsigned neighbor : graph.getNode(node).neighbors)
+			if (graph->getNode(node).color == next && !filled[node])
+				for(unsigned neighbor : graph->getNode(node).neighbors)
 					if (filled[neighbor])
 					{
 						filled[node] = true;
@@ -107,15 +107,15 @@ bool State::move(color_t next)
 		// Does the move change anything that couldn't have happened before?
 		bool additionalExpansion = false;
 		for (unsigned node = 0; node < filled.size(); ++node)
-			if (graph.getNode(node).color == next && !filled[node])
+			if (graph->getNode(node).color == next && !filled[node])
 			{
 				// Was any of the neighbors filled before the last move?
 				bool prev = false;
-				for(unsigned neighbor : graph.getNode(node).neighbors)
+				for(unsigned neighbor : graph->getNode(node).neighbors)
 					if (filled[neighbor])
 					{
 						filled[node] = true;
-						if (graph.getNode(neighbor).color != last)
+						if (graph->getNode(neighbor).color != last)
 							prev = true;
 					}
 				if (filled[node] && !prev)
@@ -150,7 +150,7 @@ int State::computeValuation() const
 		// Expand current layer of nodes.
 		for (unsigned node : current)
 		{
-			for (unsigned neighbor : graph.getNode(node).neighbors)
+			for (unsigned neighbor : graph->getNode(node).neighbors)
 			{
 				// If we didn't visit the node yet, it has distance = r+1.
 				if (!visited[neighbor])
