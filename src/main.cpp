@@ -91,7 +91,8 @@ int main(int argc, char **argv)
 	std::vector<color_t> result =
 		computeBestSequence(graph);
 
-	std::cout << "A shortest sequence of moves is given by:\n\n    ";
+	std::cout << "A shortest sequence of " << result.size() - 1
+	          << " moves is given by:\n\n    ";
 	for (color_t color : result)
 		std::cout << static_cast<int>(color) << " ";
 	std::cout << '\n';
