@@ -10,7 +10,7 @@ LFLAGS = -Wall
 
 # Files
 BUILDDIR = $(VARIANT)
-TARGET = $(BUILDDIR)/floodit
+SOLVER = $(BUILDDIR)/floodit
 GENERATOR = $(BUILDDIR)/floodit-generator
 
 CPPS = src/floodit.cpp
@@ -20,8 +20,10 @@ HPPS = $(patsubst %,src/%,$(HEADERS))
 
 MAIN_OBJS = $(patsubst src/%.cpp,$(BUILDDIR)/%.o,$(CPPS) $(MAIN))
 
+all: $(SOLVER) $(GENERATOR)
+
 # Main target
-$(TARGET): $(BUILDDIR)/ $(MAIN_OBJS)
+$(SOLVER): $(BUILDDIR)/ $(MAIN_OBJS)
 	$(CXX) $(LFLAGS) -o $@ $(MAIN_OBJS)
 
 # Object files
@@ -38,6 +40,6 @@ $(BUILDDIR)/:
 	mkdir $(BUILDDIR)
 
 clean:
-	-rm $(BUILDDIR)/*.o $(TARGET)
+	-rm $(BUILDDIR)/*.o $(SOLVER) $(GENERATOR)
 
-.PHONY: generator clean
+.PHONY: all generator clean
