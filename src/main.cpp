@@ -1,15 +1,17 @@
 #include <algorithm>
-#include <cassert>
 #include <iostream>
 #include <fstream>
+#include <map>
 #include "floodit.hpp"
 
 class ColorArray
 {
 public:
-	ColorArray(unsigned rows, unsigned columns, std::vector<color_t> &&colors);
-	Graph createGraph() const;
-	color_t getNumColors() const;
+	ColorArray(unsigned rows, unsigned columns);
+	void setColor(unsigned row, unsigned column, std::string color);
+
+	Graph createGraph();
+	std::vector<std::string> getColors() const;
 
 private:
 	unsigned nodeIndex(unsigned row, unsigned column) const
@@ -17,18 +19,27 @@ private:
 
 private:
 	unsigned rows, columns;
-	std::vector<color_t> array;
+	std::map<std::string, color_t> colorMap;
+	std::vector<decltype(colorMap)::const_iterator> array;
 };
 
-ColorArray::ColorArray(unsigned rows, unsigned columns,
-                       std::vector<color_t> &&colors)
-	: rows(rows), columns(columns), array(std::move(colors))
+ColorArray::ColorArray(unsigned rows, unsigned columns)
+	: rows(rows), columns(columns), array(rows * columns) {}
+
+void ColorArray::setColor(unsigned int row, unsigned int column,
+                          std::string color)
 {
-	assert(array.size() == rows * columns);
+	auto it = colorMap.insert(std::pair<std::string, color_t>{color, 0});
+	array[nodeIndex(row, column)] = it.first;
 }
 
-Graph ColorArray::createGraph() const
+Graph ColorArray::createGraph()
 {
+	// Assign numbers to colors.
+	color_t color = 0;
+	for (auto& pair : colorMap)
+		pair.second = color++;
+
 	std::vector<Graph::Node> nodes(rows*columns);
 
 	for (unsigned i = 0; i < rows; ++i) {
@@ -40,17 +51,22 @@ Graph ColorArray::createGraph() const
 			if (j < columns-1)  neighbors.push_back(nodeIndex(i, j+1));
 
 			nodes[nodeIndex(i, j)] =
-				Graph::Node{std::move(neighbors), array[nodeIndex(i, j)]};
+				Graph::Node{std::move(neighbors),
+					array[nodeIndex(i, j)]->second};
 		}
 	}
 
 	return Graph(std::move(nodes));
 }
 
-color_t ColorArray::getNumColors() const
+std::vector<std::string> ColorArray::getColors() const
 {
-	auto max = std::max_element(array.begin(), array.end());
-	return *max + 1;
+	std::vector<std::string> colors(colorMap.size());
+	std::transform(colorMap.begin(), colorMap.end(), colors.begin(),
+		[](const std::pair<std::string, color_t> pair) { return pair.first; }
+	);
+
+	return colors;
 }
 
 ColorArray readData(std::istream& input)
@@ -58,15 +74,17 @@ ColorArray readData(std::istream& input)
 	unsigned rows, columns;
 	input >> rows >> columns;
 
-	std::vector<color_t> array(rows * columns, 0);
-	int entry;
-	for (unsigned i = 0; i < rows*columns; ++i)
-	{
-		input >> entry;
-		array[i] = static_cast<color_t>(entry);
+	ColorArray array(rows, columns);
+	std::string entry;
+	for (unsigned row = 0; row < rows; ++row) {
+		for (unsigned column = 0; column < columns; ++column)
+		{
+			input >> entry;
+			array.setColor(row, column, entry);
+		}
 	}
 
-	return ColorArray(rows, columns, std::move(array));
+	return array;
 }
 
 int main(int argc, char **argv)
@@ -74,8 +92,8 @@ int main(int argc, char **argv)
 	if (argc != 2) {
 		std::cout << "Usage: " << argv[0] << " filename\n\n"
 			"The file should have the number of rows and columns in the first "
-			"line, then the colors of each cell. The colors are consecutive "
-			"integers starting with 0.\n";
+			"line, then the colors of each cell. The colors are strings "
+			"of non-whitespace characters.\n";
 		return 1;
 	}
 
@@ -91,9 +109,10 @@ int main(int argc, char **argv)
 	std::vector<color_t> result =
 		computeBestSequence(graph);
 
+	std::vector<std::string> colors = array.getColors();
 	std::cout << "A shortest sequence of " << result.size() - 1
-	          << " moves is given by:\n\n    ";
-	for (color_t color : result)
-		std::cout << static_cast<int>(color) << " ";
+	          << " moves is given by:\n\n    [" << colors[result[0]] << "] ";
+	for (unsigned move = 1; move < result.size(); ++move)
+		std::cout << colors[result[move]] << " ";
 	std::cout << '\n';
 }
