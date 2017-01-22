@@ -43,11 +43,13 @@ void Graph::reduce()
 			if (nodes[i].color == nodes[neighbor].color)
 				partitions.merge(i, neighbor);
 
-	// Create a map for renumbering the nodes.
+	// Create a map for renumbering the nodes. Update color counts.
 	std::vector<unsigned> reduced(nodes.size(), 0);
 	for (unsigned i = 1; i < nodes.size(); ++i) {
 		assert(partitions.find(i) <= i);
 		reduced[i] = reduced[i-1] + (partitions.find(i) == i);
+		if (partitions.find(i) != i)
+			--colorCounts[nodes[i].color];
 	}
 
 	// Now we merge the neighbor lists.
@@ -83,14 +85,12 @@ void Graph::reduce()
 		neighbors.erase(end, neighbors.end());
 	}
 
-	// Compute the number of colors.
-	auto max = std::max_element(nodes.begin(), nodes.end(),
-		[](const Node &a, const Node &b) { return a.color < b.color; });
-	colorCounts.clear();
-	colorCounts.resize(max->color + 1);
-	// Count the number of nodes for each color.
-	for (unsigned i = 0; i < nodes.size(); ++i)
-		++colorCounts[nodes[i].color];
+	// Check that we (still) have all colors.
+	unsigned numColors =
+		std::count_if(colorCounts.begin(), colorCounts.end(),
+			[](unsigned i) { return i > 0; });
+	if (numColors != colorCounts.size())
+		throw std::runtime_error("We have no nodes for some colors");
 }
 
 State::State(const Graph &graph)
@@ -185,9 +185,7 @@ int State::computeValuation() const
 	// The remaining number of nodes for each color.
 	std::vector<unsigned> colorCounts = graph->getColorCounts();
 	// The remaining number of colors.
-	unsigned numColors =
-		std::count_if(colorCounts.begin(), colorCounts.end(),
-			[](unsigned i) { return i > 0; });
+	unsigned numColors = colorCounts.size();
 	unsigned max = 0;
 	for (unsigned distance = 0; !current.empty(); ++distance)
 	{
