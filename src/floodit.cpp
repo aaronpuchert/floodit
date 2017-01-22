@@ -16,11 +16,22 @@
 #include <stdexcept>
 #include "unionfind.hpp"
 
-Graph::Graph(std::vector<Node> &&nodelist) : nodes(std::move(nodelist))
+Graph::Graph(unsigned numNodes) : nodes(numNodes), colorCounts(1, numNodes) {}
+
+void Graph::setColor(unsigned index, color_t color)
 {
-	// Sort the adjacency lists.
-	for (Node &node : nodes)
-		std::sort(node.neighbors.begin(), node.neighbors.end());
+	--colorCounts[nodes[index].color];
+	nodes[index].color = color;
+
+	if (color >= colorCounts.size())
+		colorCounts.resize(color+1);
+	++colorCounts[color];
+}
+
+void Graph::addEdge(unsigned a, unsigned b)
+{
+	nodes[a].neighbors.push_back(b);
+	nodes[b].neighbors.push_back(a);
 }
 
 void Graph::reduce()
@@ -75,6 +86,7 @@ void Graph::reduce()
 	// Compute the number of colors.
 	auto max = std::max_element(nodes.begin(), nodes.end(),
 		[](const Node &a, const Node &b) { return a.color < b.color; });
+	colorCounts.clear();
 	colorCounts.resize(max->color + 1);
 	// Count the number of nodes for each color.
 	for (unsigned i = 0; i < nodes.size(); ++i)
@@ -85,6 +97,13 @@ State::State(const Graph &graph)
 	: graph(&graph), filled(graph.getNumNodes(), false),
 	  moves(1, graph.getNode(0).color)
 {
+	// Check that the graph is reduced. We are going to assume that later.
+	for (unsigned index = 0; index < graph.getNumNodes(); ++index) {
+		const Graph::Node &node = graph.getNode(index);
+		for (unsigned neighbor : node.neighbors)
+			assert(node.color != graph.getNode(neighbor).color);
+	}
+
 	filled[0] = true;
 	valuation = computeValuation();
 }

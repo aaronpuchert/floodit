@@ -1,6 +1,6 @@
 #include <vector>
 
-typedef char color_t;
+typedef unsigned char color_t;
 
 /**
  * Colored undirected graph.
@@ -10,22 +10,36 @@ class Graph
 public:
 	struct Node
 	{
-		std::vector<unsigned> neighbors;	///< Sorted list of neighbor nodes.
+		std::vector<unsigned> neighbors;    ///< Sorted list of neighbor nodes.
 		color_t color;                      ///< Color of the node.
 	};
 
 public:
 	/**
-	 * Construct graph from a vector of nodes.
-	 * @param nodelist Vector of @ref Node%s.
+	 * Construct completely unconnected, all nodes having color 0.
+	 *
+	 * @param numNodes Number of nodes for the graph.
 	 */
-	explicit Graph(std::vector<Node> &&nodelist);
+	explicit Graph(unsigned numNodes);
+
+	/**
+	 * Set color of node @p index to @p color.
+	 */
+	void setColor(unsigned index, color_t color);
+
+	/**
+	 * Add an edge between nodes @p a and @p b.
+	 */
+	void addEdge(unsigned a, unsigned b);
 
 	/**
 	 * Reduce the graph.
 	 *
 	 * We can safely merge adjacent nodes of the same color, because they will
 	 * always be filled together.
+	 *
+	 * @note This will of course renumber the nodes, but node 0 will be part of
+	 * the new node 0.
 	 */
 	void reduce();
 

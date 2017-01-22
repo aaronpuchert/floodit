@@ -40,23 +40,19 @@ Graph ColorArray::createGraph()
 	for (auto& pair : colorMap)
 		pair.second = color++;
 
-	std::vector<Graph::Node> nodes(rows*columns);
-
+	Graph graph(rows * columns);
 	for (unsigned i = 0; i < rows; ++i) {
 		for (unsigned j = 0; j < columns; ++j) {
-			std::vector<unsigned> neighbors;
-			if (i > 0)          neighbors.push_back(nodeIndex(i-1, j));
-			if (j > 0)          neighbors.push_back(nodeIndex(i, j-1));
-			if (i < rows-1)     neighbors.push_back(nodeIndex(i+1, j));
-			if (j < columns-1)  neighbors.push_back(nodeIndex(i, j+1));
+			if (i > 0)
+				graph.addEdge(nodeIndex(i-1, j), nodeIndex(i, j));
+			if (j > 0)
+				graph.addEdge(nodeIndex(i, j-1), nodeIndex(i, j));
 
-			nodes[nodeIndex(i, j)] =
-				Graph::Node{std::move(neighbors),
-					array[nodeIndex(i, j)]->second};
+			graph.setColor(nodeIndex(i, j), array[nodeIndex(i, j)]->second);
 		}
 	}
 
-	return Graph(std::move(nodes));
+	return graph;
 }
 
 std::vector<std::string> ColorArray::getColors() const
