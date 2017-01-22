@@ -1,3 +1,6 @@
+#ifndef FLOODIT_HPP
+#define FLOODIT_HPP
+
 #include <vector>
 
 typedef unsigned char color_t;
@@ -125,3 +128,5 @@ private:
  * A^* algorithm to compute the best sequence.
  */
 std::vector<color_t> computeBestSequence(const Graph &graph);
+
+#endif

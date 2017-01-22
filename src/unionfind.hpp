@@ -1,3 +1,6 @@
+#ifndef UNIONFIND_HPP
+#define UNIONFIND_HPP
+
 #include <numeric>
 #include <vector>
 
@@ -32,3 +35,5 @@ public:
 private:
 	std::vector<unsigned> parent;
 };
+
+#endif
