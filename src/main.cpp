@@ -1,7 +1,9 @@
 #include <algorithm>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <map>
+#include <memory>
 #include "floodit.hpp"
 
 class ColorArray
@@ -83,27 +85,12 @@ ColorArray readData(std::istream& input)
 	return array;
 }
 
-int main(int argc, char **argv)
+void solvePuzzle(std::istream& input)
 {
-	if (argc != 2) {
-		std::cout << "Usage: " << argv[0] << " filename\n\n"
-			"The file should have the number of rows and columns in the first "
-			"line, then the colors of each cell. The colors are strings "
-			"of non-whitespace characters.\n";
-		return 1;
-	}
-
-	std::ifstream file(argv[1]);
-	if (file.fail()) {
-		std::cerr << "Error: could not open file '" << argv[1] << "'.\n";
-		return 1;
-	}
-
-	ColorArray array = readData(file);
+	ColorArray array = readData(input);
 	Graph graph = array.createGraph();
 	graph.reduce();
-	std::vector<color_t> result =
-		computeBestSequence(graph);
+	std::vector<color_t> result = computeBestSequence(graph);
 
 	std::vector<std::string> colors = array.getColors();
 	std::cout << "A shortest sequence of " << result.size() - 1
@@ -111,4 +98,67 @@ int main(int argc, char **argv)
 	for (unsigned move = 1; move < result.size(); ++move)
 		std::cout << colors[result[move]] << " ";
 	std::cout << '\n';
+}
+
+void solvePuzzleChallenge(unsigned rows, unsigned columns, std::istream& input)
+{
+	std::unique_ptr<char[]> puzzle(new char[rows*columns+1]);
+
+	while (input.get(puzzle.get(), rows*columns+1)) {
+		input.ignore(1, '\n');
+
+		ColorArray array(rows, columns);
+		for (unsigned row = 0; row < rows; ++row)
+			for (unsigned column = 0; column < columns; ++column)
+				array.setColor(row, column, {puzzle[row * columns + column]});
+
+		// Solve it.
+		Graph graph = array.createGraph();
+		graph.reduce();
+		std::vector<color_t> result = computeBestSequence(graph);
+
+		// Print results.
+		std::vector<std::string> colors = array.getColors();
+		for (unsigned move = 1; move < result.size(); ++move)
+			std::cout << colors[result[move]];
+		std::cout << '\n';
+	}
+}
+
+int main(int argc, char **argv)
+{
+	if (argc == 2) {
+		std::ifstream file(argv[1]);
+		if (file.fail()) {
+			std::cerr << "Error: could not open file '" << argv[1] << "'.\n";
+			return 1;
+		}
+
+		solvePuzzle(file);
+	}
+	else if (argc == 4) {
+		unsigned rows, columns;
+		std::istringstream(argv[1]) >> rows;
+		std::istringstream(argv[2]) >> columns;
+		std::ifstream file(argv[3]);
+		if (file.fail()) {
+			std::cerr << "Error: could not open file '" << argv[3] << "'.\n";
+			return 1;
+		}
+
+		solvePuzzleChallenge(rows, columns, file);
+	}
+	else {
+		std::cout <<
+			"Usage: " << argv[0] << " filename\n"
+			"       " << argv[0] << " rows columns filename\n"
+			"\n"
+			"In the first variant, the file should have the number of rows and "
+			"columns in the first line, then the colors of each cell. "
+			"The colors are strings of non-whitespace characters.\n"
+			"\n"
+			"In the second variant, the file contains one puzzle per line, "
+			"given by rows x columns single-character colors.\n";
+		return 1;
+	}
 }
