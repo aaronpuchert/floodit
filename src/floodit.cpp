@@ -167,17 +167,17 @@ bool State::move(color_t next)
 int State::computeValuation() const
 {
 	// Bitfield to mark visited nodes (to avoid visiting a node more than once).
-	std::vector<bool> visited = filled;
+	bool visited[filled.size()];
+	std::copy(filled.begin(), filled.end(), visited);
 
 	// Current (distance = r) and next layer (distance = r+1) of nodes.
-	std::vector<unsigned> current, next;
-	current.reserve(filled.size());
-	next.reserve(filled.size());
+	unsigned array[2][filled.size()];
+	std::pair<unsigned*, size_t> current = {array[0], 0}, next = {array[1], 0};
 
 	// For distance = 0, we have all the nodes that are already filled.
 	for (unsigned index = 0; index < filled.size(); ++index)
 		if (filled[index])
-			current.push_back(index);
+			current.first[current.second++] = index;
 
 	// We observe the following: for every distance d of which we have nodes,
 	// the sum of the distance plus the number of colors of nodes of distance
@@ -188,15 +188,19 @@ int State::computeValuation() const
 	// obviously still a lower bound, hence admissible. It is also consistent.
 
 	// The remaining number of nodes for each color.
-	std::vector<unsigned> colorCounts = graph->getColorCounts();
+	const std::vector<unsigned>& cc = graph->getColorCounts();
+	unsigned colorCounts[cc.size()];
+	std::copy(cc.begin(), cc.end(), colorCounts);
+
 	// The remaining number of colors.
-	unsigned numColors = colorCounts.size();
+	unsigned numColors = cc.size();
 	unsigned max = 0;
-	for (unsigned distance = 0; !current.empty(); ++distance)
+	for (unsigned distance = 0; current.second != 0; ++distance)
 	{
 		// Expand current layer of nodes.
-		for (unsigned node : current)
+		for (unsigned i = 0; i < current.second; ++i)
 		{
+			unsigned node = current.first[i];
 			if (--colorCounts[graph->getNode(node).color] == 0)
 				--numColors;
 			for (unsigned neighbor : graph->getNode(node).neighbors)
@@ -204,7 +208,7 @@ int State::computeValuation() const
 				// If we didn't visit the node yet, it has distance = r+1.
 				if (!visited[neighbor])
 				{
-					next.push_back(neighbor);
+					next.first[next.second++] = neighbor;
 					visited[neighbor] = true;
 				}
 			}
@@ -212,7 +216,7 @@ int State::computeValuation() const
 
 		// Move the next layer into the current.
 		std::swap(current, next);
-		next.clear();
+		next.second = 0;
 		max = std::max(max, distance + numColors);
 	}
 
