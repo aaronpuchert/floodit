@@ -25,6 +25,11 @@ public:
 	 */
 	explicit Graph(unsigned numNodes);
 
+	/// Get index of root node.
+	unsigned getRootIndex() const { return rootIndex; }
+	/// Set @p index of root node.
+	void setRootIndex(unsigned index) { rootIndex = index; }
+
 	/**
 	 * Set color of node @p index to @p color.
 	 */
@@ -41,8 +46,7 @@ public:
 	 * We can safely merge adjacent nodes of the same color, because they will
 	 * always be filled together.
 	 *
-	 * @note This will of course renumber the nodes, but node 0 will be part of
-	 * the new node 0.
+	 * @note The old root node will be part of the new root node.
 	 */
 	void reduce();
 
@@ -67,6 +71,8 @@ public:
 
 private:
 	std::vector<Node> nodes;
+	unsigned rootIndex;
+
 	std::vector<unsigned> colorCounts;
 };
 
