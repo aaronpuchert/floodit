@@ -170,57 +170,86 @@ int State::computeValuation() const
 	bool visited[filled.size()];
 	std::copy(filled.begin(), filled.end(), visited);
 
-	// Current (distance = r) and next layer (distance = r+1) of nodes.
+	// Current and next layer of nodes.
 	unsigned array[2][filled.size()];
 	std::pair<unsigned*, size_t> current = {array[0], 0}, next = {array[1], 0};
 
-	// For distance = 0, we have all the nodes that are already filled.
-	for (unsigned index = 0; index < filled.size(); ++index)
-		if (filled[index])
-			current.first[current.second++] = index;
-
-	// We observe the following: for every distance d of which we have nodes,
-	// the sum of the distance plus the number of colors of nodes of distance
-	// larger than d is a lower bound for the number of moves needed. That is
-	// because the first d moves can at most remove nodes of distance less than
-	// or equal to d, and the remaining colors have to be cleared by separate
-	// moves. The maximum of this number over all d for which we have nodes is
-	// obviously still a lower bound, hence admissible. It is also consistent.
-
-	// The remaining number of nodes for each color.
+	// The number of nodes for each color that we haven't visited yet.
 	const std::vector<unsigned>& cc = graph->getColorCounts();
 	unsigned colorCounts[cc.size()];
 	std::copy(cc.begin(), cc.end(), colorCounts);
 
-	// The remaining number of colors.
-	unsigned numColors = cc.size();
-	unsigned max = 0;
-	for (unsigned distance = 0; current.second != 0; ++distance)
+	// Visit all filled nodes.
+	for (unsigned index = 0; index < filled.size(); ++index) {
+		if (filled[index]) {
+			current.first[current.second++] = index;
+			--colorCounts[graph->getNode(index).color];
+		}
+	}
+
+	// Expand node, adapt colorCounts and return number of eliminated colors.
+	auto expandNode = [this, &visited, &next, &colorCounts](unsigned node)
 	{
-		// Expand current layer of nodes.
-		for (unsigned i = 0; i < current.second; ++i)
-		{
-			unsigned node = current.first[i];
-			if (--colorCounts[graph->getNode(node).color] == 0)
-				--numColors;
-			for (unsigned neighbor : graph->getNode(node).neighbors)
-			{
-				// If we didn't visit the node yet, it has distance = r+1.
-				if (!visited[neighbor])
-				{
-					next.first[next.second++] = neighbor;
-					visited[neighbor] = true;
-				}
+		unsigned numEliminated = 0;
+		for (unsigned neighbor : graph->getNode(node).neighbors) {
+			if (!visited[neighbor]) {
+				next.first[next.second++] = neighbor;
+				visited[neighbor] = true;
+				if (--colorCounts[graph->getNode(neighbor).color] == 0)
+					++numEliminated;
+			}
+		}
+
+		return numEliminated;
+	};
+
+	// We compute an admissible heuristic recursively: If there are no nodes
+	// left, return 0. Furthermore, if a color can be eliminated in one move
+	// from the current position, that move is an optimal move and we can
+	// simply use it. Otherwise, all moves fill a subset of the neighbors of
+	// the filled nodes. Thus, filling that layer gets us at least one step
+	// closer to the end.
+
+	// Number of colors that can be eliminated in the next move.
+	unsigned numEliminated = 0;
+	bool eliminated[cc.size()];
+	unsigned distance = 0;
+
+	while (current.second != 0) {
+		if (numEliminated > 0) {
+			// We can eliminate colors. Do just that.
+			// We also combine all these elimination moves.
+			distance += numEliminated;
+			numEliminated = 0;
+
+			// Detect the eliminated colors.
+			for (unsigned i = 0; i < cc.size(); ++i)
+				eliminated[i] = (colorCounts[i] == 0);
+			for (unsigned i = 0; i < current.second; ++i) {
+				unsigned node = current.first[i];
+				if (eliminated[graph->getNode(node).color])
+					numEliminated += expandNode(node);
+				else
+					next.first[next.second++] = node;
+			}
+		}
+		else {
+			++distance;
+
+			// Nothing found, do the color-blind pseudo-move
+			// Expand current layer of nodes.
+			for (unsigned i = 0; i < current.second; ++i) {
+				unsigned node = current.first[i];
+				numEliminated += expandNode(node);
 			}
 		}
 
 		// Move the next layer into the current.
 		std::swap(current, next);
 		next.second = 0;
-		max = std::max(max, distance + numColors);
 	}
 
-	return moves.size() + max;
+	return moves.size() + distance;
 }
 
 bool State::done() const
