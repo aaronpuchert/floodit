@@ -2,6 +2,9 @@ language: cpp
 compiler:
   - gcc
   - clang
+env:
+  - VARIANT=debug
+  - VARIANT=release
 dist: trusty
 sudo: false
 script:
