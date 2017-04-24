@@ -16,7 +16,8 @@
 #include <stdexcept>
 #include "unionfind.hpp"
 
-Graph::Graph(unsigned numNodes) : nodes(numNodes), colorCounts(1, numNodes) {}
+Graph::Graph(unsigned numNodes)
+	: nodes(numNodes), rootIndex(0), colorCounts(1, numNodes) {}
 
 void Graph::setColor(unsigned index, color_t color)
 {
@@ -51,6 +52,9 @@ void Graph::reduce()
 		if (partitions.find(i) != i)
 			--colorCounts[nodes[i].color];
 	}
+
+	// Update root index.
+	rootIndex = reduced[partitions.find(rootIndex)];
 
 	// Now we merge the neighbor lists.
 	for (unsigned i = 0; i < nodes.size(); ++i) {
@@ -95,7 +99,7 @@ void Graph::reduce()
 
 State::State(const Graph &graph)
 	: graph(&graph), filled(graph.getNumNodes(), false),
-	  moves(1, graph.getNode(0).color)
+	  moves(1, graph.getNode(graph.getRootIndex()).color)
 {
 	// Check that the graph is reduced. We are going to assume that later.
 	for (unsigned index = 0; index < graph.getNumNodes(); ++index) {
@@ -104,7 +108,7 @@ State::State(const Graph &graph)
 			assert(node.color != graph.getNode(neighbor).color);
 	}
 
-	filled[0] = true;
+	filled[graph.getRootIndex()] = true;
 	valuation = computeValuation();
 }
 
