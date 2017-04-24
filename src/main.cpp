@@ -9,7 +9,8 @@
 class ColorArray
 {
 public:
-	ColorArray(unsigned rows, unsigned columns);
+	ColorArray(unsigned rows, unsigned columns,
+	           unsigned originRow, unsigned originColumn);
 	void setColor(unsigned row, unsigned column, std::string color);
 
 	Graph createGraph();
@@ -23,10 +24,13 @@ private:
 	unsigned rows, columns;
 	std::map<std::string, color_t> colorMap;
 	std::vector<decltype(colorMap)::const_iterator> array;
+	unsigned originIndex;
 };
 
-ColorArray::ColorArray(unsigned rows, unsigned columns)
-	: rows(rows), columns(columns), array(rows * columns) {}
+ColorArray::ColorArray(unsigned rows, unsigned columns,
+                       unsigned originRow, unsigned originColumn)
+	: rows(rows), columns(columns), array(rows * columns),
+	  originIndex(nodeIndex(originRow, originColumn)) {}
 
 void ColorArray::setColor(unsigned int row, unsigned int column,
                           std::string color)
@@ -43,6 +47,7 @@ Graph ColorArray::createGraph()
 		pair.second = color++;
 
 	Graph graph(rows * columns);
+	graph.setRootIndex(originIndex);
 	for (unsigned i = 0; i < rows; ++i) {
 		for (unsigned j = 0; j < columns; ++j) {
 			if (i > 0)
@@ -71,8 +76,10 @@ ColorArray readData(std::istream& input)
 {
 	unsigned rows, columns;
 	input >> rows >> columns;
+	unsigned originRow, originColumn;
+	input >> originRow >> originColumn;
 
-	ColorArray array(rows, columns);
+	ColorArray array(rows, columns, originRow, originColumn);
 	std::string entry;
 	for (unsigned row = 0; row < rows; ++row) {
 		for (unsigned column = 0; column < columns; ++column)
@@ -100,14 +107,15 @@ void solvePuzzle(std::istream& input)
 	std::cout << '\n';
 }
 
-void solvePuzzleChallenge(unsigned rows, unsigned columns, std::istream& input)
+void solvePuzzleChallenge(std::istream& input, unsigned rows, unsigned columns,
+                          unsigned originRow, unsigned columnRow)
 {
 	std::unique_ptr<char[]> puzzle(new char[rows*columns+1]);
 
 	while (input.get(puzzle.get(), rows*columns+1)) {
 		input.ignore(1, '\n');
 
-		ColorArray array(rows, columns);
+		ColorArray array(rows, columns, originRow, columnRow);
 		for (unsigned row = 0; row < rows; ++row)
 			for (unsigned column = 0; column < columns; ++column)
 				array.setColor(row, column, {puzzle[row * columns + column]});
@@ -136,29 +144,41 @@ int main(int argc, char **argv)
 
 		solvePuzzle(file);
 	}
-	else if (argc == 4) {
+	else if (argc == 4 || argc == 6) {
 		unsigned rows, columns;
 		std::istringstream(argv[1]) >> rows;
 		std::istringstream(argv[2]) >> columns;
-		std::ifstream file(argv[3]);
+
+		unsigned originRow = 0, originColumn = 0;
+		if (argc == 6) {
+			std::istringstream(argv[3]) >> originRow;
+			std::istringstream(argv[4]) >> originColumn;
+		}
+
+		std::ifstream file(argv[argc-1]);
 		if (file.fail()) {
-			std::cerr << "Error: could not open file '" << argv[3] << "'.\n";
+			std::cerr << "Error: could not open file '" << argv[argc-1]
+			          << "'.\n";
 			return 1;
 		}
 
-		solvePuzzleChallenge(rows, columns, file);
+		solvePuzzleChallenge(file, rows, columns, originRow, originColumn);
 	}
 	else {
 		std::cout <<
 			"Usage: " << argv[0] << " filename\n"
-			"       " << argv[0] << " rows columns filename\n"
+			"       " << argv[0] << " rows columns [row column] filename\n"
 			"\n"
 			"In the first variant, the file should have the number of rows and "
-			"columns in the first line, then the colors of each cell. "
+			"columns in the first line, the row and column index of the origin "
+			"cell (0-based) in the second, and then the colors of each cell, "
+			"all separated by spaces. "
 			"The colors are strings of non-whitespace characters.\n"
 			"\n"
 			"In the second variant, the file contains one puzzle per line, "
-			"given by rows x columns single-character colors.\n";
+			"given by rows x columns single-character colors. Optionally, the "
+			"origin cell may be given by row and column index (0-based), "
+			"otherwise (0, 0) is assumed.\n";
 		return 1;
 	}
 }
