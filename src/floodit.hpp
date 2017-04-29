@@ -88,12 +88,13 @@ public:
 	 */
 	explicit State(const Graph &graph);
 
+	std::vector<unsigned> nbFilled() const;
 	/**
 	 * Do a move.
 	 * @param next Color for move.
 	 * @return True, if the move makes sense.
 	 */
-	bool move(color_t next);
+	bool move(color_t next, std::vector<unsigned> nbFilled);
 
 	/**
 	 * Get valuation of the state.

@@ -113,52 +113,54 @@ State::State(const Graph &graph)
 	valuation = computeValuation();
 }
 
-bool State::move(color_t next)
+std::vector<unsigned> State::nbFilled() const
+{
+	std::vector<unsigned> nf;
+	nf.reserve(filled.size());
+	bool visited[filled.size()];
+	std::copy(filled.begin(), filled.end(), visited);
+
+	for (unsigned node = 0; node < filled.size(); ++node) {
+		if (filled[node]) {
+			for (unsigned nb: graph->getNode(node).neighbors) {
+				if (!visited[nb]){
+					nf.push_back(nb);
+					visited[nb] = true;
+				}
+			}
+		}
+	}
+	return nf;
+}
+
+bool State::move(color_t next, std::vector<unsigned> nbFilled)
 {
 	assert(next != moves.back());
 
 	color_t last = moves.back();
 	moves.push_back(next);
 
-	if (next > last)
-	{
-		// Does the move change anything?
-		bool expansion = false;
-		for (unsigned node = 0; node < filled.size(); ++node)
-			if (graph->getNode(node).color == next && !filled[node])
-				for(unsigned neighbor : graph->getNode(node).neighbors)
-					if (filled[neighbor])
-					{
-						filled[node] = true;
-						expansion = true;
-					}
+	// Does the move change anything that couldn't have happened before?
+	bool swappedMovesBetter = std::all_of(nbFilled.begin(), nbFilled.end(),
+	[this, next, last](unsigned node) {
+		if(graph->getNode(node).color != next) return true;
+		std::vector<unsigned> nbs = graph->getNode(node).neighbors;
+		return std::any_of(nbs.begin(), nbs.end(),
+			[this, last](unsigned nb) { return filled[nb] &&
+			graph->getNode(nb).color != last; } ); } ) &&
+	(next < last || std::any_of(nbFilled.begin(), nbFilled.end(),
+		[this, next, last](unsigned node) {
+		if(graph->getNode(node).color != next) return false;
+		std::vector<unsigned> nbs = graph->getNode(node).neighbors;
+		return std::any_of(nbs.begin(), nbs.end(),
+			[this, last](unsigned nb) { return !filled[nb] &&
+			graph->getNode(nb).color == last; } ); } ));
+	if (swappedMovesBetter)
+		return false;
 
-		if (!expansion)
-			return false;
-	}
-	else
-	{
-		// Does the move change anything that couldn't have happened before?
-		bool additionalExpansion = false;
-		for (unsigned node = 0; node < filled.size(); ++node)
-			if (graph->getNode(node).color == next && !filled[node])
-			{
-				// Was any of the neighbors filled before the last move?
-				bool prev = false;
-				for(unsigned neighbor : graph->getNode(node).neighbors)
-					if (filled[neighbor])
-					{
-						filled[node] = true;
-						if (graph->getNode(neighbor).color != last)
-							prev = true;
-					}
-				if (filled[node] && !prev)
-					additionalExpansion = true;
-			}
+	for (unsigned node : nbFilled)
+		filled[node] = (graph->getNode(node).color == next);
 
-		if (!additionalExpansion)
-			return false;
-	}
 
 	valuation = computeValuation();
 	return true;
@@ -238,10 +240,8 @@ int State::computeValuation() const
 
 			// Nothing found, do the color-blind pseudo-move
 			// Expand current layer of nodes.
-			for (unsigned i = 0; i < current.second; ++i) {
-				unsigned node = current.first[i];
-				numEliminated += expandNode(node);
-			}
+			for (unsigned i = 0; i < current.second; ++i)
+				numEliminated += expandNode(current.first[i]);
 		}
 
 		// Move the next layer into the current.
@@ -278,6 +278,7 @@ std::vector<color_t> computeBestSequence(const Graph &graph)
 		if (state.done())
 			return state.getMoves();
 
+		std::vector<unsigned> nbFilled = state.nbFilled();
 		// Try all colors but the last one used.
 		color_t numColors = graph.getColorCounts().size();
 		for (color_t next = 0; next < numColors; ++next) {
@@ -285,7 +286,7 @@ std::vector<color_t> computeBestSequence(const Graph &graph)
 				continue;
 
 			State nextState = state;
-			if (nextState.move(next))
+			if (nextState.move(next, nbFilled))
 				queue.push(std::move(nextState));
 		}
 	}
