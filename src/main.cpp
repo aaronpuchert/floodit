@@ -108,14 +108,14 @@ void solvePuzzle(std::istream& input)
 }
 
 void solvePuzzleChallenge(std::istream& input, unsigned rows, unsigned columns,
-                          unsigned originRow, unsigned columnRow)
+                          unsigned originRow, unsigned originColumn)
 {
 	std::unique_ptr<char[]> puzzle(new char[rows*columns+1]);
 
 	while (input.get(puzzle.get(), rows*columns+1)) {
 		input.ignore(1, '\n');
 
-		ColorArray array(rows, columns, originRow, columnRow);
+		ColorArray array(rows, columns, originRow, originColumn);
 		for (unsigned row = 0; row < rows; ++row)
 			for (unsigned column = 0; column < columns; ++column)
 				array.setColor(row, column, {puzzle[row * columns + column]});
