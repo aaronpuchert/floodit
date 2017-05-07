@@ -110,15 +110,21 @@ void solvePuzzle(std::istream& input)
 void solvePuzzleChallenge(std::istream& input, unsigned rows, unsigned columns,
                           unsigned originRow, unsigned originColumn)
 {
-	std::unique_ptr<char[]> puzzle(new char[rows*columns+1]);
+	ColorArray array(rows, columns, originRow, originColumn);
 
-	while (input.get(puzzle.get(), rows*columns+1)) {
-		input.ignore(1, '\n');
+	unsigned row = 0, column = 0;	// Position.
+	char digit;
+	while (input >> digit) {
+		array.setColor(row, column, {digit});
 
-		ColorArray array(rows, columns, originRow, originColumn);
-		for (unsigned row = 0; row < rows; ++row)
-			for (unsigned column = 0; column < columns; ++column)
-				array.setColor(row, column, {puzzle[row * columns + column]});
+		// Go to next position.
+		if (++row != rows)
+			continue;
+		row = 0;
+
+		if (++column != columns)
+			continue;
+		column = 0;
 
 		// Solve it.
 		Graph graph = array.createGraph();
@@ -175,7 +181,7 @@ int main(int argc, char **argv)
 			"all separated by spaces. "
 			"The colors are strings of non-whitespace characters.\n"
 			"\n"
-			"In the second variant, the file contains one puzzle per line, "
+			"In the second variant, the file may contain multiple puzzles, "
 			"given by rows x columns single-character colors. Optionally, the "
 			"origin cell may be given by row and column index (0-based), "
 			"otherwise (0, 0) is assumed.\n";
