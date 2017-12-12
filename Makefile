@@ -1,9 +1,11 @@
 # Settings
 VARIANT ?= release
 ifeq ($(VARIANT),release)
-    ADDITIONAL_FLAGS = -O2 -DNDEBUG
+ADDITIONAL_FLAGS = -O2 -DNDEBUG
+else ifeq ($(VARIANT),debug)
+ADDITIONAL_FLAGS = -ggdb3
 else
-    ADDITIONAL_FLAGS = -ggdb3
+ADDITIONAL_FLAGS = $(error Unknown variant, set VARIANT={debug|release})
 endif
 CFLAGS = -Wall -Wextra -std=c++11 $(ADDITIONAL_FLAGS)
 LFLAGS = -Wall
