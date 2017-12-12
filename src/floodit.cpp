@@ -14,6 +14,7 @@
 #include <cassert>
 #include <queue>
 #include <stdexcept>
+#include <utility>
 #include "unionfind.hpp"
 
 Graph::Graph(unsigned numNodes)
