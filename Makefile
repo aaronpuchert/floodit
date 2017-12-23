@@ -17,8 +17,8 @@ GENERATOR = $(BUILDDIR)/floodit-generator
 
 CPPS = src/floodit.cpp
 MAIN = src/main.cpp
-HEADERS = floodit.hpp unionfind.hpp
-HPPS = $(patsubst %,src/%,$(HEADERS))
+INCLUDE_DIR = include
+HEADERS = $(INCLUDE_DIR)/floodit.hpp src/unionfind.hpp
 
 MAIN_OBJS = $(patsubst src/%.cpp,$(BUILDDIR)/%.o,$(CPPS) $(MAIN))
 
@@ -29,8 +29,8 @@ $(SOLVER): $(BUILDDIR)/ $(MAIN_OBJS)
 	$(CXX) $(LFLAGS) -o $@ $(MAIN_OBJS)
 
 # Object files
-$(BUILDDIR)/%.o: src/%.cpp $(HPPS)
-	$(CXX) -c $(CFLAGS) -o $@ $<
+$(BUILDDIR)/%.o: src/%.cpp $(HEADERS)
+	$(CXX) -c $(CFLAGS) -I $(INCLUDE_DIR) -o $@ $<
 
 # Generator
 generator: $(GENERATOR)
