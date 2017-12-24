@@ -2,10 +2,15 @@ language: cpp
 compiler:
   - gcc
   - clang
+dist: trusty
+sudo: false
+addons:
+  apt:
+    packages:
+      - libgtest-dev
 env:
   - VARIANT=debug
   - VARIANT=release
-dist: trusty
-sudo: false
 script:
   - make
+  - make GTEST_PREFIX=/usr test

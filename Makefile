@@ -14,13 +14,33 @@ LFLAGS = -Wall
 BUILDDIR = $(VARIANT)
 SOLVER = $(BUILDDIR)/floodit
 GENERATOR = $(BUILDDIR)/floodit-generator
+TEST_TARGET = $(BUILDDIR)/floodit-test
 
+SRC_DIR = src
 CPPS = src/floodit.cpp
 MAIN = src/main.cpp
+TEST_DIR = test
+TESTS = test/floodtest.cpp
 INCLUDE_DIR = include
 HEADERS = $(INCLUDE_DIR)/floodit.hpp src/unionfind.hpp
 
-MAIN_OBJS = $(patsubst src/%.cpp,$(BUILDDIR)/%.o,$(CPPS) $(MAIN))
+MAIN_OBJS = $(patsubst %.cpp,$(BUILDDIR)/%.o,$(CPPS) $(MAIN))
+TEST_OBJS = $(patsubst %.cpp,$(BUILDDIR)/%.o,$(CPPS) $(TESTS))
+
+# Google Test shenanigans. Some distributions don't provide libgtest.so.
+# So we have to compile it for ourselves first. Well that is fun.
+ifdef GTEST_PREFIX
+GTEST_DIR = $(GTEST_PREFIX)/src/gtest
+GTEST_OBJ = $(BUILDDIR)/gtest-all.o $(BUILDDIR)/gtest_main.o
+GTEST = $(GTEST_OBJ)
+ifneq ($(GTEST_PREFIX),/usr)
+CXXFLAGS += -I$(GTEST_PREFIX)/include
+endif
+$(GTEST_OBJ): $(BUILDDIR)/%.o: $(GTEST_DIR)/src/%.cc
+	$(CXX) -c $(CXXFLAGS) -I$(GTEST_DIR) -o $@ $^
+else
+GTEST = -lgtest -lgtest_main
+endif
 
 all: $(SOLVER) $(GENERATOR)
 
@@ -28,8 +48,12 @@ all: $(SOLVER) $(GENERATOR)
 $(SOLVER): $(BUILDDIR)/ $(MAIN_OBJS)
 	$(CXX) $(LFLAGS) -o $@ $(MAIN_OBJS)
 
+# Test binary
+$(TEST_TARGET): $(BUILDDIR)/ $(TEST_OBJS) $(GTEST_OBJ)
+	$(CXX) $(LFLAGS) $(GTEST) -lpthread -o $@ $(TEST_OBJS)
+
 # Object files
-$(BUILDDIR)/%.o: src/%.cpp $(HEADERS)
+$(BUILDDIR)/%.o: %.cpp $(HEADERS)
 	$(CXX) -c $(CFLAGS) -I $(INCLUDE_DIR) -o $@ $<
 
 # Generator
@@ -40,8 +64,15 @@ $(GENERATOR): src/generator.cpp
 
 $(BUILDDIR)/:
 	mkdir $(BUILDDIR)
+	mkdir $(BUILDDIR)/$(SRC_DIR)
+	mkdir $(BUILDDIR)/$(TEST_DIR)
+
+# Tests
+test: $(TEST_TARGET)
+	./$(TEST_TARGET)
 
 clean:
-	-rm $(BUILDDIR)/*.o $(SOLVER) $(GENERATOR)
+	-rm $(BUILDDIR)/$(SRC_DIR)/*.o $(BUILDDIR)/$(TEST_DIR)/*.o
+	-rm $(SOLVER) $(GENERATOR) $(TEST_TARGET)
 
-.PHONY: all generator clean
+.PHONY: all generator test clean
