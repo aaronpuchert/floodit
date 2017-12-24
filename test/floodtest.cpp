@@ -19,11 +19,11 @@ TEST_P(FlooditTest, Solve)
 {
 	const FlooditTestParam& param = GetParam();
 
-	// Verify that graph is reduced.
+	// Verify that the graph is reduced.
 	for (auto edge : param.edges)
 		EXPECT_NE(param.colors[edge.first], param.colors[edge.second]);
 
-	// We duplicate the relations to for easy access.
+	// We duplicate, invert and sort the relations for easy access.
 	std::vector<std::pair<unsigned, unsigned>> edges(param.edges);
 	std::transform(
 		param.edges.begin(), param.edges.end(), std::back_inserter(edges),
