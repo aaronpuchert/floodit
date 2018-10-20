@@ -102,9 +102,9 @@ static void solvePuzzle(std::istream& input)
 
 	std::vector<std::string> colors = array.getColors();
 	std::cout << "A shortest sequence of " << result.size() - 1
-	          << " moves is given by:\n\n    [" << colors[result[0]] << "] ";
+	          << " moves is given by:\n\n    [" << colors[result[0]] << "]";
 	for (unsigned move = 1; move < result.size(); ++move)
-		std::cout << colors[result[move]] << " ";
+		std::cout << " " << colors[result[move]];
 	std::cout << '\n';
 }
 

@@ -68,8 +68,9 @@ $(BUILDDIR)/:
 	mkdir $(BUILDDIR)/$(TEST_DIR)
 
 # Tests
-test: $(TEST_TARGET)
+test: $(SOLVER) $(TEST_TARGET)
 	./$(TEST_TARGET)
+	./test/verify $(SOLVER)
 
 clean:
 	-rm $(BUILDDIR)/$(SRC_DIR)/*.o $(BUILDDIR)/$(TEST_DIR)/*.o

@@ -1,0 +1,23 @@
+#!/bin/bash
+SOLVER=$1
+
+ALL=0
+FAIL=0
+for name in test/data/*.in
+do
+	((ALL++))
+	echo "Run with input $name"
+	if ! diff --color <($SOLVER $name) ${name%.in}.out
+	then
+		((FAIL++))
+	fi
+done
+
+if [ $FAIL == 0 ]
+then
+	echo "$ALL test cases succeeded"
+else
+	echo "$FAIL of $ALL test cases failed"
+fi
+
+exit $FAIL
