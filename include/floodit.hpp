@@ -90,10 +90,11 @@ public:
 
 	/**
 	 * Do a move.
+	 * @param graph Graph to be based on.
 	 * @param next Color for move.
 	 * @return True, if the move makes sense.
 	 */
-	bool move(color_t next);
+	bool move(const Graph &graph, color_t next);
 
 	/**
 	 * Get valuation of the state.
@@ -120,11 +121,9 @@ public:
 	bool done() const;
 
 private:
-	int computeValuation() const;
+	int computeValuation(const Graph &graph) const;
 
 private:
-	const Graph *graph;
-
 	std::vector<bool> filled;
 	std::vector<color_t> moves;
 	int valuation;

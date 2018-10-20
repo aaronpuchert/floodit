@@ -99,7 +99,7 @@ void Graph::reduce()
 }
 
 State::State(const Graph &graph)
-	: graph(&graph), filled(graph.getNumNodes(), false),
+	: filled(graph.getNumNodes(), false),
 	  moves(1, graph.getNode(graph.getRootIndex()).color)
 {
 	// Check that the graph is reduced. We are going to assume that later.
@@ -110,10 +110,10 @@ State::State(const Graph &graph)
 	}
 
 	filled[graph.getRootIndex()] = true;
-	valuation = computeValuation();
+	valuation = computeValuation(graph);
 }
 
-bool State::move(color_t next)
+bool State::move(const Graph &graph, color_t next)
 {
 	assert(next != moves.back());
 
@@ -125,8 +125,8 @@ bool State::move(color_t next)
 		// Does the move change anything?
 		bool expansion = false;
 		for (unsigned node = 0; node < filled.size(); ++node)
-			if (graph->getNode(node).color == next && !filled[node])
-				for(unsigned neighbor : graph->getNode(node).neighbors)
+			if (graph.getNode(node).color == next && !filled[node])
+				for(unsigned neighbor : graph.getNode(node).neighbors)
 					if (filled[neighbor])
 					{
 						filled[node] = true;
@@ -141,15 +141,15 @@ bool State::move(color_t next)
 		// Does the move change anything that couldn't have happened before?
 		bool additionalExpansion = false;
 		for (unsigned node = 0; node < filled.size(); ++node)
-			if (graph->getNode(node).color == next && !filled[node])
+			if (graph.getNode(node).color == next && !filled[node])
 			{
 				// Was any of the neighbors filled before the last move?
 				bool prev = false;
-				for(unsigned neighbor : graph->getNode(node).neighbors)
+				for(unsigned neighbor : graph.getNode(node).neighbors)
 					if (filled[neighbor])
 					{
 						filled[node] = true;
-						if (graph->getNode(neighbor).color != last)
+						if (graph.getNode(neighbor).color != last)
 							prev = true;
 					}
 				if (filled[node] && !prev)
@@ -160,11 +160,11 @@ bool State::move(color_t next)
 			return false;
 	}
 
-	valuation = computeValuation();
+	valuation = computeValuation(graph);
 	return true;
 }
 
-int State::computeValuation() const
+int State::computeValuation(const Graph &graph) const
 {
 	// Bitfield to mark visited nodes (to avoid visiting a node more than once).
 	std::vector<bool> visited = filled;
@@ -188,7 +188,7 @@ int State::computeValuation() const
 	// obviously still a lower bound, hence admissible. It is also consistent.
 
 	// The remaining number of nodes for each color.
-	std::vector<unsigned> colorCounts = graph->getColorCounts();
+	std::vector<unsigned> colorCounts = graph.getColorCounts();
 	// The remaining number of colors.
 	unsigned numColors = colorCounts.size();
 	unsigned max = 0;
@@ -197,9 +197,9 @@ int State::computeValuation() const
 		// Expand current layer of nodes.
 		for (unsigned node : current)
 		{
-			if (--colorCounts[graph->getNode(node).color] == 0)
+			if (--colorCounts[graph.getNode(node).color] == 0)
 				--numColors;
-			for (unsigned neighbor : graph->getNode(node).neighbors)
+			for (unsigned neighbor : graph.getNode(node).neighbors)
 			{
 				// If we didn't visit the node yet, it has distance = r+1.
 				if (!visited[neighbor])
@@ -252,7 +252,7 @@ std::vector<color_t> computeBestSequence(const Graph &graph)
 				continue;
 
 			State nextState = state;
-			if (nextState.move(next))
+			if (nextState.move(graph, next))
 				queue.push(std::move(nextState));
 		}
 	}
