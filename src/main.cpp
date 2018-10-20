@@ -73,7 +73,7 @@ std::vector<std::string> ColorArray::getColors() const
 	return colors;
 }
 
-ColorArray readData(std::istream& input)
+static ColorArray readData(std::istream& input)
 {
 	unsigned rows, columns;
 	input >> rows >> columns;
@@ -93,7 +93,7 @@ ColorArray readData(std::istream& input)
 	return array;
 }
 
-void solvePuzzle(std::istream& input)
+static void solvePuzzle(std::istream& input)
 {
 	ColorArray array = readData(input);
 	Graph graph = array.createGraph();
@@ -108,8 +108,10 @@ void solvePuzzle(std::istream& input)
 	std::cout << '\n';
 }
 
-void solvePuzzleChallenge(std::istream& input, unsigned rows, unsigned columns,
-                          unsigned originRow, unsigned originColumn)
+static void solvePuzzleChallenge(
+	std::istream& input,
+	unsigned rows, unsigned columns,
+	unsigned originRow, unsigned originColumn)
 {
 	ColorArray array(rows, columns, originRow, originColumn);
 
