@@ -7,7 +7,7 @@ for name in test/data/*.in
 do
 	((ALL++))
 	echo "Run with input $name"
-	if ! diff --color <($SOLVER $name) ${name%.in}.out
+	if ! diff <($SOLVER $name) ${name%.in}.out
 	then
 		((FAIL++))
 	fi
