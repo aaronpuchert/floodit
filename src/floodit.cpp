@@ -12,7 +12,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <queue>
 #include <stdexcept>
 #include <utility>
 #include "unionfind.hpp"
@@ -236,12 +235,14 @@ struct StateCompare
 
 std::vector<color_t> computeBestSequence(const Graph &graph)
 {
-	std::priority_queue<State, std::vector<State>, StateCompare> queue;
-	queue.push(State(graph));
+	std::vector<State> queue;
+	queue.emplace_back(graph);
 
 	while (!queue.empty()) {
-		State state = queue.top();
-		queue.pop();
+		std::pop_heap(queue.begin(), queue.end(), StateCompare{});
+		State state = std::move(queue.back());
+		queue.pop_back();
+
 		if (state.done())
 			return state.getMoves();
 
@@ -252,8 +253,11 @@ std::vector<color_t> computeBestSequence(const Graph &graph)
 				continue;
 
 			State nextState = state;
-			if (nextState.move(graph, next))
-				queue.push(std::move(nextState));
+			if (!nextState.move(graph, next))
+				continue;
+
+			queue.push_back(std::move(nextState));
+			std::push_heap(queue.begin(), queue.end(), StateCompare{});
 		}
 	}
 
