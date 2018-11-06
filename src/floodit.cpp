@@ -97,9 +97,10 @@ void Graph::reduce()
 		throw std::runtime_error("We have no nodes for some colors");
 }
 
-State::State(const Graph &graph)
-	: filled(graph.getNumNodes(), false),
-	  moves(1, graph.getNode(graph.getRootIndex()).color)
+State::State(const Graph &graph, MoveTrie& trie)
+	: filled(graph.getNumNodes(), false)
+	, moves(trie.append(MoveTrie::initial(),
+		graph.getNode(graph.getRootIndex()).color))
 {
 	// Check that the graph is reduced. We are going to assume that later.
 	for (unsigned index = 0; index < graph.getNumNodes(); ++index) {
@@ -112,12 +113,12 @@ State::State(const Graph &graph)
 	valuation = computeValuation(graph);
 }
 
-bool State::move(const Graph &graph, color_t next)
+bool State::move(const Graph &graph, MoveTrie& trie, color_t next)
 {
 	assert(next != moves.back());
 
 	color_t last = moves.back();
-	moves.push_back(next);
+	moves = trie.append(moves, next);
 
 	if (next > last)
 	{
@@ -218,6 +219,13 @@ int State::computeValuation(const Graph &graph) const
 	return moves.size() + max;
 }
 
+std::vector<color_t> State::materializeMoves() const
+{
+	std::vector<color_t> result(moves.size());
+	moves.materialize(result.data());
+	return result;
+}
+
 bool State::done() const
 {
 	return std::all_of(filled.begin(), filled.end(), [](bool x) { return x; });
@@ -229,14 +237,16 @@ struct StateCompare
 	{
 		if (a.getValuation() != b.getValuation())
 			return a.getValuation() > b.getValuation();
-		return a.getMoves().size() < b.getMoves().size();
+		return a.getNumMoves() < b.getNumMoves();
 	}
 };
 
 std::vector<color_t> computeBestSequence(const Graph &graph)
 {
 	std::vector<State> queue;
-	queue.emplace_back(graph);
+	Trie<color_t> trie;
+
+	queue.emplace_back(graph, trie);
 
 	while (!queue.empty()) {
 		std::pop_heap(queue.begin(), queue.end(), StateCompare{});
@@ -244,7 +254,7 @@ std::vector<color_t> computeBestSequence(const Graph &graph)
 		queue.pop_back();
 
 		if (state.done())
-			return state.getMoves();
+			return state.materializeMoves();
 
 		// Try all colors but the last one used.
 		color_t numColors = graph.getColorCounts().size();
@@ -253,7 +263,7 @@ std::vector<color_t> computeBestSequence(const Graph &graph)
 				continue;
 
 			State nextState = state;
-			if (!nextState.move(graph, next))
+			if (!nextState.move(graph, trie, next))
 				continue;
 
 			queue.push_back(std::move(nextState));

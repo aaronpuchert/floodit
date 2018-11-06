@@ -1,6 +1,8 @@
 #ifndef FLOODIT_HPP
 #define FLOODIT_HPP
 
+#include "trie.hpp"
+
 #include <vector>
 
 typedef unsigned char color_t;
@@ -82,19 +84,23 @@ private:
 class State
 {
 public:
+	using MoveTrie = Trie<color_t>;
+
 	/**
 	 * Create initial state based on a graph.
 	 * @param graph Graph to be based on.
+	 * @param trie Data structure to store moves.
 	 */
-	explicit State(const Graph &graph);
+	State(const Graph &graph, MoveTrie& trie);
 
 	/**
 	 * Do a move.
 	 * @param graph Graph to be based on.
+	 * @param trie Data structure to store moves.
 	 * @param next Color for move.
 	 * @return True, if the move makes sense.
 	 */
-	bool move(const Graph &graph, color_t next);
+	bool move(const Graph &graph, MoveTrie& trie, color_t next);
 
 	/**
 	 * Get valuation of the state.
@@ -103,10 +109,16 @@ public:
 	int getValuation() const { return valuation; }
 
 	/**
+	 * Get the number of moves that lead to the state.
+	 * @return Number of moves, including the initial color of node 0.
+	 */
+	unsigned getNumMoves() const { return moves.size(); }
+
+	/**
 	 * Get the moves that lead to the state.
 	 * @return Vector of moves, including the initial color of node 0.
 	 */
-	const std::vector<color_t>& getMoves() const { return moves; }
+	std::vector<color_t> materializeMoves() const;
 
 	/**
 	 * Get the color of the last move.
@@ -125,7 +137,7 @@ private:
 
 private:
 	std::vector<bool> filled;
-	std::vector<color_t> moves;
+	MoveTrie::Sequence moves;
 	int valuation;
 };
 

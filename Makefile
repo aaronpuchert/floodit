@@ -20,9 +20,9 @@ SRC_DIR = src
 CPPS = src/floodit.cpp
 MAIN = src/main.cpp
 TEST_DIR = test
-TESTS = test/floodtest.cpp
+TESTS = test/floodtest.cpp test/trietest.cpp
 INCLUDE_DIR = include
-HEADERS = $(INCLUDE_DIR)/floodit.hpp src/unionfind.hpp
+HEADERS = $(INCLUDE_DIR)/floodit.hpp $(INCLUDE_DIR)/trie.hpp src/unionfind.hpp
 
 MAIN_OBJS = $(patsubst %.cpp,$(BUILDDIR)/%.o,$(CPPS) $(MAIN))
 TEST_OBJS = $(patsubst %.cpp,$(BUILDDIR)/%.o,$(CPPS) $(TESTS))
