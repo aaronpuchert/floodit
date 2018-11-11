@@ -46,11 +46,11 @@ all: $(SOLVER) $(GENERATOR)
 
 # Main target
 $(SOLVER): $(BUILDDIR)/ $(MAIN_OBJS)
-	$(CXX) $(LFLAGS) -o $@ $(MAIN_OBJS)
+	$(CXX) $(LFLAGS) -pthread -o $@ $(MAIN_OBJS)
 
 # Test binary
 $(TEST_TARGET): $(BUILDDIR)/ $(TEST_OBJS) $(GTEST_OBJ)
-	$(CXX) $(LFLAGS) $(GTEST) -lpthread -o $@ $(TEST_OBJS)
+	$(CXX) $(LFLAGS) $(GTEST) -pthread -o $@ $(TEST_OBJS)
 
 # Object files
 $(BUILDDIR)/%.o: %.cpp $(HEADERS)

@@ -3,8 +3,14 @@
 #include <fstream>
 #include <sstream>
 #include <map>
+#include <queue>
 #include <string>
+#include <utility>
 #include <vector>
+
+#include <mutex>
+#include <thread>
+
 #include "floodit.hpp"
 
 class ColorArray
@@ -73,6 +79,120 @@ std::vector<std::string> ColorArray::getColors() const
 	return colors;
 }
 
+class PuzzleQueue
+{
+	struct QueueElement
+	{
+		QueueElement(Graph &&graph, std::vector<std::string> &&colors)
+			: graph(std::move(graph)), colors(std::move(colors)) {}
+
+		Graph graph;
+		const std::vector<std::string> colors;
+		std::vector<color_t> result;
+		bool done = false;
+	};
+
+public:
+	PuzzleQueue(std::istream &input, std::ostream &output, unsigned rows,
+	            unsigned columns, unsigned originRow, unsigned originColumn)
+		: input(input), output(output), rows(rows), columns(columns),
+		  originRow(originRow), originColumn(originColumn) {}
+
+	/**
+	 * Read puzzles from input and solve them until input is exhausted.
+	 *
+	 * This function may be run by multiple threads at the same time.
+	 * The results will be in the order of the input, regardless of which puzzle
+	 * is finished first.
+	 */
+	void solve()
+	{
+		std::unique_lock<std::mutex> lock(mutex);
+
+		while (QueueElement *puzzle = readPuzzle()) {
+			lock.unlock();
+
+			// Reduce graph and solve puzzle. Note that only the ‘done’ flag is
+			// considered shared, so we don't need the lock here.
+			puzzle->graph.reduce();
+			puzzle->result = computeBestSequence(puzzle->graph);
+
+			lock.lock();
+			puzzle->done = true;
+			flushResults();
+		}
+	}
+
+private:
+	/** Read and enqueue a puzzle from the input.
+	 *
+	 * We need to produce the solutions in the order of input, so we store them
+	 * immediately in a queue after having read them.
+	 *
+	 * @note Assumes that @ref mutex is held.
+	 *
+	 * @return Pointer to enqueued puzzle, if available, otherwise nullptr.
+	 */
+	QueueElement* readPuzzle()
+	{
+		ColorArray array(rows, columns, originRow, originColumn);
+
+		unsigned row = 0, column = 0;
+		char digit;
+
+		while (input >> digit) {
+			array.setColor(row, column, {digit});
+
+			// Go to next position.
+			if (++row != rows)
+				continue;
+			row = 0;
+
+			if (++column != columns)
+				continue;
+
+			// Build the puzzle, enqueue it and return a pointer.
+			queue.emplace(array.createGraph(), array.getColors());
+			return &queue.back();
+		}
+
+		return nullptr;
+	}
+
+	/**
+	 * Flush results from the front of the queue to output stream.
+	 *
+	 * @note Assumes that @ref mutex is held.
+	 */
+	void flushResults()
+	{
+		while (!queue.empty() && queue.front().done) {
+			const std::vector<color_t> &result = queue.front().result;
+			const std::vector<std::string> &colors = queue.front().colors;
+			for (unsigned move = 1; move < result.size(); ++move)
+				output << colors[result[move]];
+			output << '\n';
+			queue.pop();
+		}
+	}
+
+private:
+	// Protecting the members against data races, but not the queue elements in
+	// progress, which are private to the thread that added them to the queue.
+	std::mutex mutex;
+
+	// Input and output.
+	std::istream &input;
+	std::ostream &output;
+
+	// Problem dimensions.
+	const unsigned rows, columns;
+	const unsigned originRow, originColumn;
+
+	// Puzzle queue.
+	std::queue<QueueElement> queue;
+};
+
 static ColorArray readData(std::istream& input)
 {
 	unsigned rows, columns;
@@ -113,33 +233,18 @@ static void solvePuzzleChallenge(
 	unsigned rows, unsigned columns,
 	unsigned originRow, unsigned originColumn)
 {
-	ColorArray array(rows, columns, originRow, originColumn);
+	PuzzleQueue queue(input, std::cout, rows, columns, originRow, originColumn);
 
-	unsigned row = 0, column = 0;	// Position.
-	char digit;
-	while (input >> digit) {
-		array.setColor(row, column, {digit});
+	// Fire up worker threads solving puzzles.
+	unsigned numThreads = std::thread::hardware_concurrency();
+	std::vector<std::thread> threads;
+	threads.reserve(numThreads);
+	for (unsigned thread = 0; thread != numThreads; ++thread)
+		threads.emplace_back([&queue](){ queue.solve(); });
 
-		// Go to next position.
-		if (++row != rows)
-			continue;
-		row = 0;
-
-		if (++column != columns)
-			continue;
-		column = 0;
-
-		// Solve it.
-		Graph graph = array.createGraph();
-		graph.reduce();
-		std::vector<color_t> result = computeBestSequence(graph);
-
-		// Print results.
-		std::vector<std::string> colors = array.getColors();
-		for (unsigned move = 1; move < result.size(); ++move)
-			std::cout << colors[result[move]];
-		std::cout << '\n';
-	}
+	// Wait until all are done.
+	for (auto &thread : threads)
+		thread.join();
 }
 
 int main(int argc, char **argv)
