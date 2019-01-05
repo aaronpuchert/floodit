@@ -63,7 +63,7 @@ public:
 	 * @param i Index of node.
 	 * @return Node at index @p i.
 	 */
-	const Node& getNode(unsigned i) const { return nodes[i]; }
+	const Node& operator[](unsigned i) const { return nodes[i]; }
 
 	/**
 	 * Get a vector that contains the number of nodes for each color.
