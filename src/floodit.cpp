@@ -97,7 +97,7 @@ void Graph::reduce()
 		throw std::runtime_error("We have no nodes for some colors");
 }
 
-State::State(const Graph &graph, MoveTrie& trie)
+State::State(const Graph &graph, MoveTrie &trie)
 	: filled(graph.getNumNodes(), false)
 	, moves(trie.append(MoveTrie::initial(),
 		graph[graph.getRootIndex()].color))
@@ -113,48 +113,48 @@ State::State(const Graph &graph, MoveTrie& trie)
 	valuation = computeValuation(graph);
 }
 
-bool State::move(const Graph &graph, MoveTrie& trie, color_t next)
+bool State::move(const Graph &graph, MoveTrie &trie, color_t next)
 {
 	assert(next != moves.back());
 
 	color_t last = moves.back();
 	moves = trie.append(moves, next);
 
-	if (next > last)
-	{
+	if (next > last) {
 		// Does the move change anything?
 		bool expansion = false;
-		for (unsigned node = 0; node < filled.size(); ++node)
-			if (graph[node].color == next && !filled[node])
-				for(unsigned neighbor : graph[node].neighbors)
-					if (filled[neighbor])
-					{
+		for (unsigned node = 0; node < filled.size(); ++node) {
+			if (graph[node].color == next && !filled[node]) {
+				for(unsigned neighbor : graph[node].neighbors) {
+					if (filled[neighbor]) {
 						filled[node] = true;
 						expansion = true;
 					}
+				}
+			}
+		}
 
 		if (!expansion)
 			return false;
 	}
-	else
-	{
+	else {
 		// Does the move change anything that couldn't have happened before?
 		bool additionalExpansion = false;
-		for (unsigned node = 0; node < filled.size(); ++node)
-			if (graph[node].color == next && !filled[node])
-			{
+		for (unsigned node = 0; node < filled.size(); ++node) {
+			if (graph[node].color == next && !filled[node]) {
 				// Was any of the neighbors filled before the last move?
 				bool prev = false;
-				for(unsigned neighbor : graph[node].neighbors)
-					if (filled[neighbor])
-					{
+				for (unsigned neighbor : graph[node].neighbors) {
+					if (filled[neighbor]) {
 						filled[node] = true;
 						if (graph[neighbor].color != last)
 							prev = true;
 					}
+				}
 				if (filled[node] && !prev)
 					additionalExpansion = true;
 			}
+		}
 
 		if (!additionalExpansion)
 			return false;

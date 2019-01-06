@@ -50,7 +50,7 @@ Graph ColorArray::createGraph()
 {
 	// Assign numbers to colors.
 	color_t color = 0;
-	for (auto& pair : colorMap)
+	for (auto &pair : colorMap)
 		pair.second = color++;
 
 	Graph graph(rows * columns);
@@ -124,7 +124,8 @@ public:
 	}
 
 private:
-	/** Read and enqueue a puzzle from the input.
+	/**
+	 * Read and enqueue a puzzle from the input.
 	 *
 	 * We need to produce the solutions in the order of input, so we store them
 	 * immediately in a queue after having read them.
@@ -193,7 +194,7 @@ private:
 	std::queue<QueueElement> queue;
 };
 
-static ColorArray readData(std::istream& input)
+static ColorArray readData(std::istream &input)
 {
 	unsigned rows, columns;
 	input >> rows >> columns;
@@ -213,7 +214,7 @@ static ColorArray readData(std::istream& input)
 	return array;
 }
 
-static void solvePuzzle(std::istream& input)
+static void solvePuzzle(std::istream &input)
 {
 	ColorArray array = readData(input);
 	Graph graph = array.createGraph();
@@ -229,7 +230,7 @@ static void solvePuzzle(std::istream& input)
 }
 
 static void solvePuzzleChallenge(
-	std::istream& input,
+	std::istream &input,
 	unsigned rows, unsigned columns,
 	unsigned originRow, unsigned originColumn)
 {
