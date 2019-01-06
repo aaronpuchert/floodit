@@ -166,46 +166,82 @@ bool State::move(const Graph &graph, MoveTrie& trie, color_t next)
 
 int State::computeValuation(const Graph &graph) const
 {
+	// Obtain a lower bound for the number of moves left. This is done by
+	// induction: If a move fills all remaining nodes of some color, it must be
+	// optimal, so we can just apply this move. Otherwise, we use a
+	// "color-blind" move as it combines the effects of all possible moves. This
+	// procedure will reduce the given state until it reaches the filled state.
+
 	// Bitfield to mark visited nodes (to avoid visiting a node more than once).
 	std::vector<bool> visited = filled;
 
-	// Current (distance = r) and next layer (distance = r+1) of nodes.
+	// Current (to be expanded) and next layer of nodes.
 	std::vector<unsigned> current, next;
 	current.reserve(filled.size());
 	next.reserve(filled.size());
 
-	// For distance = 0, we have all the nodes that are already filled.
-	for (unsigned index = 0; index < filled.size(); ++index)
-		if (filled[index])
-			current.push_back(index);
-
-	// We observe the following: for every distance d of which we have nodes,
-	// the sum of the distance plus the number of colors of nodes of distance
-	// larger than d is a lower bound for the number of moves needed. That is
-	// because the first d moves can at most remove nodes of distance less than
-	// or equal to d, and the remaining colors have to be cleared by separate
-	// moves. The maximum of this number over all d for which we have nodes is
-	// obviously still a lower bound, hence admissible. It is also consistent.
-
 	// The remaining number of nodes for each color.
 	std::vector<unsigned> colorCounts = graph.getColorCounts();
-	// The remaining number of colors.
-	unsigned numColors = colorCounts.size();
-	unsigned max = 0;
-	for (unsigned distance = 0; !current.empty(); ++distance)
-	{
-		// Expand current layer of nodes.
-		for (unsigned node : current)
-		{
-			if (--colorCounts[graph[node].color] == 0)
-				--numColors;
-			for (unsigned neighbor : graph[node].neighbors)
-			{
-				// If we didn't visit the node yet, it has distance = r+1.
-				if (!visited[neighbor])
-				{
-					next.push_back(neighbor);
-					visited[neighbor] = true;
+
+	// We start with all the nodes that are already filled.
+	for (unsigned index = 0; index < filled.size(); ++index) {
+		if (filled[index]) {
+			current.push_back(index);
+			--colorCounts[graph[index].color];
+		}
+	}
+
+	// Number of colors that can be eliminated in the next move.
+	unsigned numExposedColors = 0;
+	unsigned minMovesLeft = 0;
+
+	// This will serve as a backup copy of colorCounts in the loop.
+	std::vector<unsigned> colorCountsOld(colorCounts.size());
+
+	// Proceed layer by layer, expanding the current layer to obtain the next
+	// layer. The vector colorCounts keeps track of the colors of nodes that
+	// haven't been visited yet. If an entry of colorCounts reaches zero, the
+	// corresponding move from the current state will fill the remaining nodes
+	// of this color.
+	while (!current.empty()) {
+		if (numExposedColors > 0) {
+			// We can eliminate colors.
+			// We also combine all these elimination moves.
+			minMovesLeft += numExposedColors;
+			numExposedColors = 0;
+			// Backup copy of colorCounts.
+			std::copy(
+				colorCounts.begin(), colorCounts.end(), colorCountsOld.begin());
+			for (unsigned node : current) {
+				// If the color is to be eliminated, expand the node.
+				if (colorCountsOld[graph[node].color] == 0) {
+					// Expand node.
+					for (unsigned neighbor : graph[node].neighbors) {
+						if (!visited[neighbor]) {
+							next.push_back(neighbor);
+							visited[neighbor] = true;
+							if (--colorCounts[graph[neighbor].color] == 0)
+								++numExposedColors;
+						}
+					}
+				}
+				else
+					next.push_back(node);
+			}
+		}
+		else {
+			// Nothing found, do the color-blind pseudo-move.
+			++minMovesLeft;
+			// Expand current layer of nodes.
+			for (unsigned node : current) {
+				// Expand node.
+				for (unsigned neighbor : graph[node].neighbors) {
+					if (!visited[neighbor]) {
+						next.push_back(neighbor);
+						visited[neighbor] = true;
+						if (--colorCounts[graph[neighbor].color] == 0)
+							++numExposedColors;
+					}
 				}
 			}
 		}
@@ -213,10 +249,9 @@ int State::computeValuation(const Graph &graph) const
 		// Move the next layer into the current.
 		std::swap(current, next);
 		next.clear();
-		max = std::max(max, distance + numColors);
 	}
 
-	return moves.size() + max;
+	return moves.size() + minMovesLeft;
 }
 
 std::vector<color_t> State::materializeMoves() const
