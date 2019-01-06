@@ -106,7 +106,7 @@ public:
 	 * Get valuation of the state.
 	 * @return Lower bound on the total number of moves required.
 	 */
-	int getValuation() const { return valuation; }
+	unsigned getValuation() const { return valuation; }
 
 	/**
 	 * Get the number of moves that lead to the state.
@@ -133,12 +133,12 @@ public:
 	bool done() const;
 
 private:
-	int computeValuation(const Graph &graph) const;
+	unsigned computeValuation(const Graph &graph) const;
 
 private:
 	std::vector<bool> filled;
 	MoveTrie::Sequence moves;
-	int valuation;
+	unsigned valuation;
 };
 
 /**

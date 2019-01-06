@@ -164,7 +164,7 @@ bool State::move(const Graph &graph, MoveTrie &trie, color_t next)
 	return true;
 }
 
-int State::computeValuation(const Graph &graph) const
+unsigned State::computeValuation(const Graph &graph) const
 {
 	// Obtain a lower bound for the number of moves left. This is done by
 	// induction: If a move fills all remaining nodes of some color, it must be
