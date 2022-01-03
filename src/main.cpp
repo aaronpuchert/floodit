@@ -20,7 +20,7 @@ class ColorArray
 public:
 	ColorArray(unsigned rows, unsigned columns,
 	           unsigned originRow, unsigned originColumn);
-	void setColor(unsigned row, unsigned column, std::string color);
+	void setColor(unsigned row, unsigned column, std::string&& color);
 
 	Graph createGraph();
 	std::vector<std::string> getColors() const;
@@ -42,9 +42,9 @@ ColorArray::ColorArray(unsigned rows, unsigned columns,
 	  originIndex(nodeIndex(originRow, originColumn)) {}
 
 void ColorArray::setColor(unsigned int row, unsigned int column,
-                          std::string color)
+                          std::string&& color)
 {
-	auto it = colorMap.insert(std::pair<std::string, color_t>{color, 0});
+	auto it = colorMap.insert({std::move(color), 0});
 	array[nodeIndex(row, column)] = it.first;
 }
 
@@ -206,12 +206,12 @@ static ColorArray readData(std::istream &input)
 	input >> originRow >> originColumn;
 
 	ColorArray array(rows, columns, originRow, originColumn);
-	std::string entry;
 	for (unsigned row = 0; row < rows; ++row) {
 		for (unsigned column = 0; column < columns; ++column)
 		{
+			std::string entry;
 			input >> entry;
-			array.setColor(row, column, entry);
+			array.setColor(row, column, std::move(entry));
 		}
 	}
 
