@@ -266,6 +266,8 @@ bool State::done() const
 	return std::all_of(filled.begin(), filled.end(), [](bool x) { return x; });
 }
 
+namespace {
+
 struct StateCompare
 {
 	bool operator()(const State &a, const State &b) const
@@ -275,6 +277,8 @@ struct StateCompare
 		return a.getNumMoves() < b.getNumMoves();
 	}
 };
+
+} // anonymous namespace
 
 std::vector<color_t> computeBestSequence(const Graph &graph)
 {

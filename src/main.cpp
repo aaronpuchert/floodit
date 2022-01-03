@@ -13,6 +13,8 @@
 
 #include "floodit.hpp"
 
+namespace {
+
 class ColorArray
 {
 public:
@@ -193,6 +195,8 @@ private:
 	// Puzzle queue.
 	std::queue<QueueElement> queue;
 };
+
+} // anonymous namespace
 
 static ColorArray readData(std::istream &input)
 {
