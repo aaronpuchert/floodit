@@ -1,3 +1,8 @@
+The given rectangle:
+
+    red blue
+    blue red
+
 A shortest sequence of 2 moves is given by:
 
     [red] blue red

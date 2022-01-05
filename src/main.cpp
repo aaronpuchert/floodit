@@ -25,6 +25,12 @@ public:
 	Graph createGraph();
 	std::vector<std::string> getColors() const;
 
+	// Access to the original array.
+	unsigned getNumRows() const { return rows; }
+	unsigned getNumColumns() const { return columns; }
+	color_t getColor(unsigned row, unsigned column) const
+		{ return array[nodeIndex(row, column)]->second; }
+
 private:
 	unsigned nodeIndex(unsigned row, unsigned column) const
 		{ return row * columns + column; }
@@ -226,7 +232,16 @@ static void solvePuzzle(std::istream &input)
 	std::vector<color_t> result = computeBestSequence(graph);
 
 	std::vector<std::string> colors = array.getColors();
-	std::cout << "A shortest sequence of " << result.size() - 1
+
+	std::cout << "The given rectangle:\n\n";
+	for (unsigned row = 0; row < array.getNumRows(); ++row) {
+		std::cout << "   ";
+		for (unsigned column = 0; column < array.getNumColumns(); ++column)
+			std::cout << ' ' << colors[array.getColor(row, column)];
+		std::cout << '\n';
+	}
+
+	std::cout << "\nA shortest sequence of " << result.size() - 1
 	          << " moves is given by:\n\n    [" << colors[result[0]] << "]";
 	for (unsigned move = 1; move < result.size(); ++move)
 		std::cout << " " << colors[result[move]];

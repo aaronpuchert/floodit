@@ -1,3 +1,9 @@
+The given rectangle:
+
+    0 1 2
+    2 0 1
+    1 2 0
+
 A shortest sequence of 5 moves is given by:
 
     [0] 1 0 2 0 1
