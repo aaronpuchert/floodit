@@ -1,0 +1,27 @@
+name: Build and test
+
+on:
+  push:
+    branches: [ '*' ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: ['g++', 'clang++']
+        variant: ['debug', 'release']
+    env:
+      CXX: ${{ matrix.compiler }}
+      VARIANT: ${{ matrix.variant }}
+      GTEST_PREFIX: /usr
+    steps:
+    - name: Install Google Test
+      run: sudo apt-get install libgtest-dev
+    - uses: actions/checkout@v2
+    - name: make
+      run: make
+    - name: make test
+      run: make test
