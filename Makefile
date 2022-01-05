@@ -27,6 +27,8 @@ HEADERS = $(INCLUDE_DIR)/floodit.hpp $(INCLUDE_DIR)/trie.hpp src/unionfind.hpp
 MAIN_OBJS = $(patsubst %.cpp,$(BUILDDIR)/%.o,$(CPPS) $(MAIN))
 TEST_OBJS = $(patsubst %.cpp,$(BUILDDIR)/%.o,$(CPPS) $(TESTS))
 
+all: $(SOLVER) $(GENERATOR)
+
 # Google Test shenanigans. Some distributions don't provide libgtest.so.
 # So we have to compile it for ourselves first. Well that is fun.
 ifdef GTEST_PREFIX
@@ -41,8 +43,6 @@ $(GTEST_OBJ): $(BUILDDIR)/%.o: $(GTEST_DIR)/src/%.cc $(BUILDDIR)/
 else
 GTEST = -lgtest -lgtest_main
 endif
-
-all: $(SOLVER) $(GENERATOR)
 
 # Main target
 $(SOLVER): $(BUILDDIR)/ $(MAIN_OBJS)
