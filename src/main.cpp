@@ -30,7 +30,7 @@ private:
 		{ return row * columns + column; }
 
 private:
-	unsigned rows, columns;
+	const unsigned rows, columns;
 	std::map<std::string, color_t> colorMap;
 	std::vector<decltype(colorMap)::const_iterator> array;
 	unsigned originIndex;
