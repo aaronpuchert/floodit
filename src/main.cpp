@@ -5,11 +5,18 @@
 #include <map>
 #include <queue>
 #include <string>
+#include <system_error>
 #include <utility>
 #include <vector>
 
 #include <mutex>
 #include <thread>
+
+#ifdef __unix
+#include <errno.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
 
 #include "floodit.hpp"
 
@@ -30,6 +37,8 @@ public:
 	unsigned getNumColumns() const { return columns; }
 	color_t getColor(unsigned row, unsigned column) const
 		{ return array[nodeIndex(row, column)]->second; }
+	bool isOrigin(unsigned row, unsigned column) const
+		{ return nodeIndex(row, column) == originIndex; }
 
 private:
 	unsigned nodeIndex(unsigned row, unsigned column) const
@@ -224,6 +233,8 @@ static ColorArray readData(std::istream &input)
 	return array;
 }
 
+#define ESCAPE "\033"
+
 static void solvePuzzle(std::istream &input)
 {
 	ColorArray array = readData(input);
@@ -231,20 +242,49 @@ static void solvePuzzle(std::istream &input)
 	graph.reduce();
 	std::vector<color_t> result = computeBestSequence(graph);
 
-	std::vector<std::string> colors = array.getColors();
+#ifdef __unix
+	// Determine if we're printing to the terminal.
+	struct stat outStat;
+	if (fstat(STDOUT_FILENO, &outStat))
+		throw std::system_error(
+			std::error_code(errno, std::generic_category()),
+			"Calling fstat on standard output failed");
+	bool tty = S_ISCHR(outStat.st_mode);
+#else
+	constexpr bool tty = false;
+#endif
+
+	auto printColor = [colors = array.getColors(), tty](color_t color) {
+		if (tty && color < 8)
+			std::cout << ESCAPE "[9" << char('0' + color) << 'm';
+		std::cout << colors[color];
+		if (tty && color < 8)
+			std::cout << ESCAPE "[39m";
+	};
 
 	std::cout << "The given rectangle:\n\n";
 	for (unsigned row = 0; row < array.getNumRows(); ++row) {
 		std::cout << "   ";
-		for (unsigned column = 0; column < array.getNumColumns(); ++column)
-			std::cout << ' ' << colors[array.getColor(row, column)];
+		for (unsigned column = 0; column < array.getNumColumns(); ++column) {
+			std::cout << ' ';
+			bool origin = array.isOrigin(row, column);
+			if (tty && origin)
+				std::cout << ESCAPE "[4m";
+			printColor(array.getColor(row, column));
+			if (tty && origin)
+				std::cout << ESCAPE "[24m";
+		}
 		std::cout << '\n';
 	}
 
 	std::cout << "\nA shortest sequence of " << result.size() - 1
-	          << " moves is given by:\n\n    [" << colors[result[0]] << "]";
-	for (unsigned move = 1; move < result.size(); ++move)
-		std::cout << " " << colors[result[move]];
+	          << " moves is given by:\n\n    [";
+	printColor(result[0]);
+	std::cout << "]";
+	for (unsigned move = 1; move < result.size(); ++move) {
+		std::cout << " ";
+		printColor(result[move]);
+	}
 	std::cout << '\n';
 }
 

@@ -7,7 +7,7 @@ ADDITIONAL_FLAGS = -ggdb3
 else
 ADDITIONAL_FLAGS = $(error Unknown variant, set VARIANT={debug|release})
 endif
-CFLAGS = -Wall -Wextra -std=c++11 $(ADDITIONAL_FLAGS)
+CFLAGS = -Wall -Wextra -std=c++14 $(ADDITIONAL_FLAGS)
 LFLAGS = -Wall
 
 # Files
