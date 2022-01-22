@@ -1,7 +1,12 @@
 # Settings
 VARIANT ?= release
 ifeq ($(VARIANT),release)
-ADDITIONAL_FLAGS = -O2 -DNDEBUG
+ifeq ($(CXX),g++)
+LTO_FLAGS = -flto=auto
+else ifeq ($(CXX),clang++)
+LTO_FLAGS = -flto=thin
+endif
+ADDITIONAL_FLAGS = -O2 -DNDEBUG $(LTO_FLAGS)
 else ifeq ($(VARIANT),debug)
 ADDITIONAL_FLAGS = -ggdb3
 else
@@ -46,11 +51,11 @@ endif
 
 # Main target
 $(SOLVER): $(MAIN_OBJS)
-	$(CXX) $(LFLAGS) -pthread -o $@ $(MAIN_OBJS)
+	$(CXX) $(CFLAGS) $(LFLAGS) -pthread -o $@ $(MAIN_OBJS)
 
 # Test binary
 $(TEST_TARGET): $(TEST_OBJS) $(GTEST_OBJ)
-	$(CXX) $(LFLAGS) $(GTEST) -pthread -o $@ $(TEST_OBJS)
+	$(CXX) $(CFLAGS) $(LFLAGS) $(GTEST) -pthread -o $@ $(TEST_OBJS)
 
 # Object files
 $(BUILDDIR)/%.o: %.cpp $(HEADERS) | $(BUILDDIR)/
