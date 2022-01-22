@@ -38,22 +38,22 @@ GTEST = $(GTEST_OBJ)
 ifneq ($(GTEST_PREFIX),/usr)
 CXXFLAGS += -I$(GTEST_PREFIX)/include
 endif
-$(GTEST_OBJ): $(BUILDDIR)/%.o: $(GTEST_DIR)/src/%.cc $(BUILDDIR)/
+$(GTEST_OBJ): $(BUILDDIR)/%.o: $(GTEST_DIR)/src/%.cc | $(BUILDDIR)/
 	$(CXX) -c $(CXXFLAGS) -I$(GTEST_DIR) -o $@ $<
 else
 GTEST = -lgtest -lgtest_main
 endif
 
 # Main target
-$(SOLVER): $(BUILDDIR)/ $(MAIN_OBJS)
+$(SOLVER): $(MAIN_OBJS)
 	$(CXX) $(LFLAGS) -pthread -o $@ $(MAIN_OBJS)
 
 # Test binary
-$(TEST_TARGET): $(BUILDDIR)/ $(TEST_OBJS) $(GTEST_OBJ)
+$(TEST_TARGET): $(TEST_OBJS) $(GTEST_OBJ)
 	$(CXX) $(LFLAGS) $(GTEST) -pthread -o $@ $(TEST_OBJS)
 
 # Object files
-$(BUILDDIR)/%.o: %.cpp $(HEADERS)
+$(BUILDDIR)/%.o: %.cpp $(HEADERS) | $(BUILDDIR)/
 	$(CXX) -c $(CFLAGS) -I $(INCLUDE_DIR) -o $@ $<
 
 # Generator
